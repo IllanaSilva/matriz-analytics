@@ -1,0 +1,4100 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-theme="dark">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>INDEX — Evolução da Conciliação</title>
+<meta name="description" content="Painel executivo de acompanhamento da conciliação de base Fornecedora × BackOffice iGreen" />
+<style>
+/* =============================================================================
+   INDEX — Evolução da Conciliação
+   Tema executivo escuro (azul-marinho) inspirado no BI de referência, com
+   alternância para modo claro. Todas as cores vivem em variáveis CSS em
+   :root / [data-theme="light"] — nenhuma cor de marca está hardcoded no
+   restante do arquivo, então trocar a paleta é só editar aqui.
+   ============================================================================= */
+
+:root {
+  /* ---- modo escuro (padrão) ---- */
+  --bg-app: #050B16;
+  --bg-sidebar: #071120;
+  --bg-card: #0B1B31;
+  --bg-card-hover: #0F2340;
+  --bg-input: #0A1830;
+  --border-color: rgba(255, 255, 255, 0.08);
+  --border-color-strong: rgba(255, 255, 255, 0.16);
+
+  --text-primary: #F4F7FB;
+  --text-secondary: #94A3B8;
+  --text-muted: #5B7089;
+
+  --verde-igreen: #1F9D5A;
+  --verde-claro: #4ADE80;
+  --verde-bg-suave: rgba(74, 222, 128, 0.12);
+  --vermelho: #F87171;
+  --vermelho-bg-suave: rgba(248, 113, 113, 0.12);
+  --amarelo: #FBBF24;
+  --amarelo-bg-suave: rgba(251, 191, 36, 0.12);
+  --azul-destaque: #38BDF8;
+  --cinza-neutro: #94A3B8;
+  --cinza-bg-suave: rgba(148, 163, 184, 0.12);
+
+  --shadow-card: 0 4px 24px rgba(0, 0, 0, 0.35);
+  --shadow-hover: 0 8px 32px rgba(0, 0, 0, 0.45);
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-sm: 8px;
+
+  --sidebar-width: 232px;
+}
+
+[data-theme="light"] {
+  --bg-app: #EEF2F7;
+  --bg-sidebar: #FFFFFF;
+  --bg-card: #FFFFFF;
+  --bg-card-hover: #F8FAFC;
+  --bg-input: #F1F5F9;
+  --border-color: rgba(15, 23, 42, 0.08);
+  --border-color-strong: rgba(15, 23, 42, 0.14);
+
+  --text-primary: #0F172A;
+  --text-secondary: #475569;
+  --text-muted: #94A3B8;
+
+  --shadow-card: 0 2px 12px rgba(15, 23, 42, 0.08);
+  --shadow-hover: 0 8px 24px rgba(15, 23, 42, 0.12);
+}
+
+* { box-sizing: border-box; }
+
+/* Garante que o atributo HTML `hidden` sempre vença, mesmo em elementos cuja
+   classe define display:flex/grid explicitamente (ex.: .modal-overlay,
+   .form-conferencia). Sem esta regra, esses elementos ficam visíveis mesmo
+   com `hidden` presente, porque a especificidade da classe empata com a do
+   seletor de atributo — este bug deixava o modal de snapshot sempre aberto. */
+[hidden] { display: none !important; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  background: var(--bg-app);
+  color: var(--text-primary);
+  font-family: "Segoe UI", "Inter", -apple-system, BlinkMacSystemFont, Roboto, Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+button { font-family: inherit; cursor: pointer; }
+input, select, textarea { font-family: inherit; }
+
+/* ============================== HEADER ============================== */
+
+.app-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 28px;
+  background: linear-gradient(180deg, var(--bg-sidebar) 0%, var(--bg-app) 100%);
+  border-bottom: 1px solid var(--border-color);
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  gap: 24px;
+  flex-wrap: wrap;
+}
+
+.header-tag {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  color: var(--verde-claro);
+  text-transform: uppercase;
+}
+
+.header-title {
+  margin: 4px 0 2px;
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  color: var(--text-primary);
+}
+.header-title-dash { color: var(--text-muted); font-weight: 400; }
+
+.header-subtitle {
+  margin: 0;
+  font-size: 12.5px;
+  color: var(--text-secondary);
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.header-update-info {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  line-height: 1.3;
+}
+.header-update-info .label { font-size: 10.5px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.06em; }
+.header-update-info .value { font-size: 13px; font-weight: 600; color: var(--text-primary); }
+
+.btn-icon {
+  width: 38px; height: 38px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-color);
+  background: var(--bg-card);
+  color: var(--text-primary);
+  font-size: 16px;
+  display: flex; align-items: center; justify-content: center;
+  transition: background 0.15s, transform 0.1s;
+}
+.btn-icon:hover { background: var(--bg-card-hover); transform: translateY(-1px); }
+
+.btn-primary {
+  display: flex; align-items: center; gap: 8px;
+  padding: 10px 18px;
+  border-radius: var(--radius-sm);
+  border: none;
+  background: linear-gradient(135deg, var(--verde-igreen), #17824A);
+  color: white;
+  font-weight: 700;
+  font-size: 13px;
+  letter-spacing: 0.02em;
+  box-shadow: 0 4px 14px rgba(31, 157, 90, 0.35);
+  transition: transform 0.12s, box-shadow 0.12s;
+}
+.btn-primary:hover { transform: translateY(-1px); box-shadow: 0 6px 18px rgba(31, 157, 90, 0.45); }
+
+.btn-secondary {
+  padding: 10px 16px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-color-strong);
+  background: var(--bg-card);
+  color: var(--text-primary);
+  font-weight: 600;
+  font-size: 13px;
+  transition: background 0.15s;
+}
+.btn-secondary:hover { background: var(--bg-card-hover); }
+
+.btn-perigo {
+  padding: 10px 16px;
+  border-radius: var(--radius-sm);
+  border: 1px solid rgba(248, 113, 113, 0.4);
+  background: var(--vermelho-bg-suave);
+  color: var(--vermelho);
+  font-weight: 700;
+  font-size: 13px;
+}
+.btn-perigo:hover { background: rgba(248, 113, 113, 0.22); }
+
+/* ============================== LAYOUT ============================== */
+
+.app-shell {
+  display: flex;
+  min-height: calc(100vh - 82px);
+}
+
+.sidebar {
+  width: var(--sidebar-width);
+  flex-shrink: 0;
+  background: var(--bg-sidebar);
+  border-right: 1px solid var(--border-color);
+  padding: 18px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  position: sticky;
+  top: 82px;
+  height: calc(100vh - 82px);
+  overflow-y: auto;
+}
+
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 11px 14px;
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  border-radius: var(--radius-sm);
+  font-size: 13.5px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  text-align: left;
+  position: relative;
+  transition: background 0.15s, color 0.15s;
+}
+.nav-item:hover { background: var(--bg-card); color: var(--text-primary); }
+.nav-item.is-active {
+  background: linear-gradient(135deg, rgba(31, 157, 90, 0.18), rgba(31, 157, 90, 0.05));
+  color: var(--verde-claro);
+  box-shadow: inset 3px 0 0 var(--verde-igreen);
+}
+.nav-icon { font-size: 16px; width: 20px; text-align: center; }
+.nav-badge {
+  margin-left: auto;
+  background: var(--vermelho);
+  color: white;
+  font-size: 10.5px;
+  font-weight: 700;
+  padding: 1px 7px;
+  border-radius: 999px;
+}
+
+.content {
+  flex: 1;
+  padding: 28px 32px 60px;
+  min-width: 0;
+}
+
+.secao { display: none; animation: fadeIn 0.2s ease; }
+.secao.is-active { display: block; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+
+.secao-header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+.secao-header h2 { margin: 0 0 4px; font-size: 19px; font-weight: 800; }
+.secao-desc { margin: 0; font-size: 13px; color: var(--text-secondary); }
+
+/* ============================== CARDS ============================== */
+
+.card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+  padding: 20px;
+  margin-bottom: 20px;
+}
+.card-header { margin-bottom: 14px; }
+.card-header h3 { margin: 0; font-size: 14.5px; font-weight: 700; }
+.card-header-flex { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; }
+
+.grid-2col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+
+/* ============================== KPI CARDS (INÍCIO) ============================== */
+
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.kpi-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  padding: 18px 20px;
+  box-shadow: var(--shadow-card);
+  transition: transform 0.15s, box-shadow 0.15s;
+  position: relative;
+  overflow: hidden;
+}
+.kpi-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-hover); }
+.kpi-card::before {
+  content: "";
+  position: absolute; top: 0; left: 0; right: 0; height: 3px;
+  background: var(--kpi-accent, var(--verde-igreen));
+}
+.kpi-card .kpi-icone { font-size: 20px; }
+.kpi-card .kpi-label {
+  font-size: 11px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase;
+  color: var(--text-muted); margin: 8px 0 6px;
+}
+.kpi-card .kpi-valor { font-size: 26px; font-weight: 800; color: var(--text-primary); line-height: 1; }
+.kpi-card .kpi-sub { font-size: 12.5px; font-weight: 600; margin-top: 8px; display: inline-flex; align-items: center; gap: 4px; }
+.kpi-sub.positivo { color: var(--verde-claro); }
+.kpi-sub.negativo { color: var(--vermelho); }
+.kpi-sub.neutro { color: var(--text-muted); }
+
+/* ============================== ÍNDICE DE EVOLUÇÃO ============================== */
+
+.indice-topo { display: flex; align-items: center; gap: 20px; margin-bottom: 16px; }
+.indice-pontuacao { font-size: 42px; font-weight: 800; }
+.indice-classificacao { font-size: 14px; font-weight: 700; padding: 4px 12px; border-radius: 999px; }
+.indice-fator { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; font-size: 12.5px; }
+.indice-fator .nome-fator { width: 230px; color: var(--text-secondary); flex-shrink: 0; }
+.indice-barra-bg { flex: 1; height: 8px; background: var(--bg-input); border-radius: 999px; overflow: hidden; }
+.indice-barra-fill { height: 100%; border-radius: 999px; }
+.indice-fator .nota-fator { width: 36px; text-align: right; font-weight: 700; color: var(--text-primary); }
+
+.lista-perguntas { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+.lista-perguntas li { font-size: 13px; color: var(--text-secondary); }
+.lista-perguntas strong { color: var(--text-primary); }
+
+/* ============================== DROPZONE / UPLOAD ============================== */
+
+.dropzone {
+  border: 2px dashed var(--border-color-strong);
+  border-radius: var(--radius-lg);
+  padding: 48px 24px;
+  text-align: center;
+  transition: border-color 0.15s, background 0.15s;
+  cursor: pointer;
+}
+.dropzone.is-dragover { border-color: var(--verde-igreen); background: var(--verde-bg-suave); }
+.dropzone-icone { font-size: 36px; }
+.dropzone-titulo { font-size: 15px; font-weight: 800; letter-spacing: 0.02em; margin: 10px 0 4px; }
+.dropzone-ou { color: var(--text-muted); font-size: 12px; margin: 6px 0; }
+.dropzone-formatos { color: var(--text-muted); font-size: 11.5px; margin-top: 12px; }
+
+.processamento-grid { display: grid; grid-template-columns: 320px 1fr; gap: 24px; }
+.preview-coluna img { width: 100%; border-radius: var(--radius-md); border: 1px solid var(--border-color); }
+.preview-coluna h4, .conferencia-coluna h4 { margin: 0 0 10px; font-size: 13px; color: var(--text-secondary); }
+
+.badge-confianca { font-size: 11px; padding: 2px 9px; border-radius: 999px; margin-left: 8px; font-weight: 700; }
+.badge-confianca.alta { background: var(--verde-bg-suave); color: var(--verde-claro); }
+.badge-confianca.media { background: var(--amarelo-bg-suave); color: var(--amarelo); }
+.badge-confianca.baixa { background: var(--vermelho-bg-suave); color: var(--vermelho); }
+
+.progresso-ocr { margin-bottom: 12px; }
+.progresso-barra { height: 6px; background: var(--bg-input); border-radius: 999px; overflow: hidden; }
+.progresso-fill { height: 100%; width: 0%; background: var(--verde-igreen); transition: width 0.2s; }
+#progresso-texto { font-size: 12px; color: var(--text-muted); }
+
+.aviso-confianca {
+  background: var(--amarelo-bg-suave);
+  color: var(--amarelo);
+  border: 1px solid rgba(251, 191, 36, 0.3);
+  border-radius: var(--radius-sm);
+  padding: 10px 14px;
+  font-size: 13px;
+  font-weight: 600;
+  margin-bottom: 14px;
+}
+
+.diagnostico-ocr {
+  background: var(--bg-input);
+  border: 1px solid var(--border-color-strong);
+  border-radius: var(--radius-sm);
+  padding: 10px 14px;
+  margin-bottom: 14px;
+  font-size: 12.5px;
+}
+.diagnostico-ocr summary { cursor: pointer; font-weight: 700; color: var(--text-secondary); }
+.diagnostico-ocr pre {
+  max-height: 260px; overflow: auto; background: var(--bg-app); border-radius: 6px;
+  padding: 10px; font-size: 11px; color: var(--text-secondary); white-space: pre-wrap; word-break: break-word;
+}
+
+.form-conferencia { display: flex; flex-direction: column; gap: 14px; }
+.form-row { display: flex; gap: 14px; flex-wrap: wrap; }
+.form-row label { display: flex; flex-direction: column; gap: 5px; font-size: 12px; color: var(--text-secondary); flex: 1; min-width: 140px; }
+.form-row input {
+  background: var(--bg-input);
+  border: 1px solid var(--border-color-strong);
+  border-radius: var(--radius-sm);
+  padding: 9px 11px;
+  color: var(--text-primary);
+  font-size: 13px;
+}
+.form-row input:focus { outline: 2px solid var(--verde-igreen); outline-offset: 1px; }
+
+.matriz-form-titulo { margin: 6px 0 4px; font-size: 13px; color: var(--text-secondary); }
+.tabela-matriz-form-wrap { overflow-x: auto; }
+.tabela-matriz-form { border-collapse: collapse; width: 100%; font-size: 12px; }
+.tabela-matriz-form th, .tabela-matriz-form td { border: 1px solid var(--border-color); padding: 6px; text-align: center; }
+.tabela-matriz-form th { background: var(--bg-input); color: var(--text-secondary); font-weight: 700; font-size: 10.5px; }
+.tabela-matriz-form td.rotulo-linha { background: var(--bg-input); color: var(--text-secondary); font-weight: 700; font-size: 10.5px; text-align: left; padding-left: 10px; }
+.tabela-matriz-form input {
+  width: 64px; text-align: center; background: var(--bg-input); border: 1px solid var(--border-color-strong);
+  border-radius: 6px; padding: 5px; color: var(--text-primary); font-size: 12px;
+}
+.tabela-matriz-form td.celula-diagonal input { border-color: rgba(31, 157, 90, 0.5); }
+.check-neutro {
+  display: flex; align-items: center; justify-content: center; gap: 2px;
+  font-size: 8px; color: var(--text-muted); margin-top: 3px; cursor: pointer;
+}
+.check-neutro input { width: 11px; height: 11px; margin: 0; accent-color: var(--cinza-neutro); }
+
+.form-acoes { display: flex; justify-content: flex-end; gap: 10px; margin-top: 6px; }
+
+/* ============================== TABELAS ============================== */
+
+.filtros-historico { display: flex; gap: 10px; }
+.filtros-historico input, .filtros-historico select {
+  background: var(--bg-input); border: 1px solid var(--border-color-strong); border-radius: var(--radius-sm);
+  padding: 8px 12px; color: var(--text-primary); font-size: 12.5px;
+}
+
+.tabela-wrap { overflow-x: auto; }
+.tabela-dados { width: 100%; border-collapse: collapse; font-size: 13px; }
+.tabela-dados th {
+  text-align: left; padding: 10px 12px; color: var(--text-muted); font-weight: 700;
+  font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em;
+  border-bottom: 1px solid var(--border-color-strong); white-space: nowrap; cursor: pointer;
+}
+.tabela-dados th:hover { color: var(--text-primary); }
+.tabela-dados td { padding: 10px 12px; border-bottom: 1px solid var(--border-color); white-space: nowrap; }
+.tabela-dados tbody tr:hover { background: var(--bg-card-hover); }
+
+.pill { display: inline-flex; align-items: center; gap: 4px; padding: 3px 10px; border-radius: 999px; font-size: 11.5px; font-weight: 700; }
+.pill-ok { background: var(--verde-bg-suave); color: var(--verde-claro); }
+.pill-revisar { background: var(--amarelo-bg-suave); color: var(--amarelo); }
+.pill-manual { background: var(--cinza-bg-suave); color: var(--cinza-neutro); }
+
+.acoes-linha { display: flex; gap: 6px; }
+.acoes-linha button {
+  border: none; background: var(--bg-input); color: var(--text-secondary); border-radius: 6px;
+  width: 28px; height: 28px; font-size: 13px;
+}
+.acoes-linha button:hover { color: var(--text-primary); background: var(--bg-card-hover); }
+
+/* ============================== EVOLUÇÃO (gráficos) ============================== */
+
+.filtros-periodo { display: flex; gap: 8px; }
+.chip {
+  border: 1px solid var(--border-color-strong); background: var(--bg-card); color: var(--text-secondary);
+  padding: 7px 14px; border-radius: 999px; font-size: 12.5px; font-weight: 600;
+}
+.chip.is-active { background: var(--verde-igreen); color: white; border-color: transparent; }
+
+/* ============================== FORNECEDORAS ============================== */
+
+.medalha { font-size: 16px; margin-right: 6px; }
+
+/* ============================== MOVIMENTAÇÕES ============================== */
+
+.movimentacoes-colunas { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 18px; }
+.coluna-melhorias .card-header h3 { color: var(--verde-claro); }
+.coluna-pioras .card-header h3 { color: var(--vermelho); }
+.coluna-neutro .card-header h3 { color: var(--cinza-neutro); }
+
+.lista-movimentacoes { display: flex; flex-direction: column; gap: 10px; max-height: 460px; overflow-y: auto; }
+.item-movimentacao {
+  background: var(--bg-input); border-radius: var(--radius-sm); padding: 10px 12px;
+  border-left: 3px solid var(--cinza-neutro);
+}
+.item-movimentacao.tipo-melhoria { border-left-color: var(--verde-claro); }
+.item-movimentacao.tipo-piora { border-left-color: var(--vermelho); }
+.item-movimentacao .combo-nome { font-size: 12.5px; font-weight: 700; margin-bottom: 4px; }
+.item-movimentacao .combo-valores { font-size: 15px; font-weight: 800; display: flex; align-items: center; gap: 8px; }
+.item-movimentacao .combo-seta { color: var(--text-muted); font-weight: 400; }
+.item-movimentacao .combo-variacao { font-size: 12px; font-weight: 700; margin-top: 4px; }
+.item-movimentacao.tipo-melhoria .combo-variacao { color: var(--verde-claro); }
+.item-movimentacao.tipo-piora .combo-variacao { color: var(--vermelho); }
+
+/* ============================== ALERTAS ============================== */
+
+.lista-alertas { display: flex; flex-direction: column; gap: 12px; }
+.alerta {
+  display: flex; gap: 14px; align-items: flex-start;
+  background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-md);
+  padding: 14px 16px; box-shadow: var(--shadow-card);
+}
+.alerta-icone { font-size: 20px; line-height: 1; }
+.alerta-titulo { font-weight: 800; font-size: 13.5px; margin-bottom: 3px; }
+.alerta-mensagem { font-size: 13px; color: var(--text-secondary); }
+.alerta.tipo-piora { border-left: 3px solid var(--vermelho); }
+.alerta.tipo-melhoria { border-left: 3px solid var(--verde-claro); }
+.alerta.tipo-atencao { border-left: 3px solid var(--amarelo); }
+.alerta.tipo-destaque { border-left: 3px solid var(--azul-destaque); }
+.alerta-vazio { color: var(--text-muted); font-size: 13px; text-align: center; padding: 30px; }
+
+/* ============================== MATRIZ ============================== */
+
+.legenda-matriz { display: flex; gap: 18px; margin-bottom: 14px; font-size: 12px; color: var(--text-secondary); }
+.dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 5px; }
+.dot-verde { background: var(--verde-claro); }
+.dot-vermelho { background: var(--vermelho); }
+.dot-neutro { background: var(--cinza-neutro); }
+
+.tabela-matriz-wrap { overflow-x: auto; }
+.tabela-matriz { border-collapse: collapse; width: 100%; }
+.tabela-matriz th, .tabela-matriz td { border: 1px solid var(--border-color); padding: 10px; text-align: center; }
+.tabela-matriz th { background: var(--bg-input); font-size: 11px; color: var(--text-secondary); font-weight: 700; }
+.tabela-matriz td.rotulo-linha { background: var(--bg-input); font-size: 11px; color: var(--text-secondary); font-weight: 700; text-align: left; }
+.celula-matriz { min-width: 90px; }
+.celula-matriz .valor-atual { font-size: 16px; font-weight: 800; }
+.celula-matriz .valor-delta { font-size: 11px; font-weight: 700; margin-top: 2px; }
+.celula-matriz.melhoria { background: var(--verde-bg-suave); }
+.celula-matriz.melhoria .valor-delta { color: var(--verde-claro); }
+.celula-matriz.piora { background: var(--vermelho-bg-suave); }
+.celula-matriz.piora .valor-delta { color: var(--vermelho); }
+.celula-matriz.neutro .valor-delta { color: var(--text-muted); }
+.celula-matriz.neutro-categoria { background: rgba(148,163,184,0.10); }
+.celula-matriz.neutro-categoria .valor-delta { color: var(--cinza-neutro); font-style: italic; }
+.celula-matriz.diagonal { box-shadow: inset 0 0 0 2px rgba(31, 157, 90, 0.4); }
+
+/* ============================== CONFIGURAÇÕES ============================== */
+
+.texto-secundario { font-size: 12.5px; color: var(--text-secondary); line-height: 1.6; }
+.botoes-exportacao { display: flex; flex-direction: column; gap: 10px; }
+.card-perigo { border-color: rgba(248, 113, 113, 0.3); }
+
+/* ============================== MODAL ============================== */
+
+.modal-overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.55);
+  display: flex; align-items: center; justify-content: center; z-index: 100; padding: 24px;
+}
+.modal {
+  background: var(--bg-card); border-radius: var(--radius-lg); border: 1px solid var(--border-color);
+  max-width: 640px; width: 100%; max-height: 84vh; overflow-y: auto; box-shadow: var(--shadow-hover);
+}
+.modal-header { display: flex; align-items: center; justify-content: space-between; padding: 18px 20px; border-bottom: 1px solid var(--border-color); }
+.modal-header h3 { margin: 0; font-size: 15px; }
+.modal-corpo { padding: 20px; }
+
+/* ============================== TOASTS ============================== */
+
+.toast-container { position: fixed; bottom: 20px; right: 20px; display: flex; flex-direction: column; gap: 10px; z-index: 200; }
+.toast {
+  background: var(--bg-card); border: 1px solid var(--border-color-strong); border-radius: var(--radius-sm);
+  padding: 12px 16px; font-size: 13px; box-shadow: var(--shadow-hover); min-width: 240px;
+  animation: slideIn 0.2s ease;
+}
+.toast.sucesso { border-left: 3px solid var(--verde-claro); }
+.toast.erro { border-left: 3px solid var(--vermelho); }
+.toast.info { border-left: 3px solid var(--azul-destaque); }
+@keyframes slideIn { from { opacity: 0; transform: translateX(20px); } to { opacity: 1; transform: translateX(0); } }
+
+/* ============================== RESPONSIVO ============================== */
+
+@media (max-width: 1180px) {
+  .kpi-grid { grid-template-columns: repeat(2, 1fr); }
+  .grid-2col { grid-template-columns: 1fr; }
+  .movimentacoes-colunas { grid-template-columns: 1fr; }
+  .processamento-grid { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 880px) {
+  .sidebar {
+    width: 76px;
+  }
+  .nav-label { display: none; }
+  .nav-item { justify-content: center; }
+  .nav-badge { position: absolute; top: 4px; right: 4px; }
+  .content { padding: 20px 16px 60px; }
+  .app-header { padding: 12px 16px; }
+  .header-title { font-size: 17px; }
+  .header-update-info { display: none; }
+}
+
+@media (max-width: 620px) {
+  .kpi-grid { grid-template-columns: 1fr; }
+}
+
+</style>
+</head>
+<body>
+
+<!-- ============================== HEADER ============================== -->
+<header class="app-header">
+  <div class="header-left">
+    <span class="header-tag">BI • CONCILIAÇÃO DE BASE</span>
+    <h1 class="header-title">INDEX <span class="header-title-dash">—</span> EVOLUÇÃO DA CONCILIAÇÃO</h1>
+    <p class="header-subtitle">Acompanhamento histórico • Fornecedora × BackOffice</p>
+  </div>
+  <div class="header-right">
+    <div class="header-update-info">
+      <span class="label">Última atualização</span>
+      <span class="value" id="ultima-atualizacao">—</span>
+    </div>
+    <button class="btn-icon" id="btn-tema" title="Alternar modo claro/escuro" aria-label="Alternar tema">
+      <span id="icone-tema">🌙</span>
+    </button>
+    <button class="btn-primary" id="btn-novo-snapshot">
+      <span>📸</span> NOVO SNAPSHOT
+    </button>
+  </div>
+</header>
+
+<div class="app-shell">
+
+  <!-- ============================== SIDEBAR ============================== -->
+  <nav class="sidebar" id="sidebar">
+    <button class="nav-item is-active" data-secao="inicio">
+      <span class="nav-icon">🏠</span><span class="nav-label">INÍCIO</span>
+    </button>
+    <button class="nav-item" data-secao="snapshots">
+      <span class="nav-icon">📸</span><span class="nav-label">SNAPSHOTS</span>
+    </button>
+    <button class="nav-item" data-secao="evolucao">
+      <span class="nav-icon">📈</span><span class="nav-label">EVOLUÇÃO</span>
+    </button>
+    <button class="nav-item" data-secao="fornecedoras">
+      <span class="nav-icon">🏢</span><span class="nav-label">FORNECEDORAS</span>
+    </button>
+    <button class="nav-item" data-secao="movimentacoes">
+      <span class="nav-icon">🔄</span><span class="nav-label">MOVIMENTAÇÕES</span>
+    </button>
+    <button class="nav-item" data-secao="alertas">
+      <span class="nav-icon">⚠️</span><span class="nav-label">ALERTAS</span>
+      <span class="nav-badge" id="badge-alertas" hidden>0</span>
+    </button>
+    <button class="nav-item" data-secao="matriz">
+      <span class="nav-icon">▦</span><span class="nav-label">MATRIZ</span>
+    </button>
+    <button class="nav-item" data-secao="configuracoes">
+      <span class="nav-icon">⚙️</span><span class="nav-label">CONFIGURAÇÕES</span>
+    </button>
+  </nav>
+
+  <!-- ============================== CONTEÚDO ============================== -->
+  <main class="content">
+
+    <!-- ---------- 1. INÍCIO ---------- -->
+    <section class="secao is-active" id="secao-inicio">
+      <div class="secao-header">
+        <h2>Visão executiva</h2>
+        <p class="secao-desc">Principais indicadores do snapshot mais recente comparado ao anterior.</p>
+      </div>
+
+      <div class="kpi-grid" id="kpi-grid-inicio"><!-- cards injetados via JS --></div>
+
+      <div class="grid-2col">
+        <div class="card card-indice">
+          <div class="card-header">
+            <h3>🎯 ÍNDICE DE EVOLUÇÃO</h3>
+          </div>
+          <div id="indice-evolucao-corpo"><!-- injetado via JS --></div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <h3>📌 Perguntas que este painel responde</h3>
+          </div>
+          <ul class="lista-perguntas">
+            <li>📅 O que mudou desde o último snapshot? → aba <strong>MOVIMENTAÇÕES</strong></li>
+            <li>📈 O que melhorou? / 📉 O que piorou? → aba <strong>MOVIMENTAÇÕES</strong> e <strong>ALERTAS</strong></li>
+            <li>🏢 Qual fornecedora evoluiu mais? → aba <strong>FORNECEDORAS</strong></li>
+            <li>⚠️ Qual fornecedora precisa de atenção? → card acima e aba <strong>FORNECEDORAS</strong></li>
+            <li>🔥 Qual divergência está causando maior impacto? → aba <strong>MATRIZ</strong></li>
+            <li>🎯 A operação como um todo está evoluindo? → card <strong>ÍNDICE DE EVOLUÇÃO</strong></li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- ---------- 2. SNAPSHOTS ---------- -->
+    <section class="secao" id="secao-snapshots">
+      <div class="secao-header">
+        <h2>Snapshots</h2>
+        <p class="secao-desc">Envie o print diário do BI. O sistema tenta ler os dados automaticamente — sempre confira antes de salvar.</p>
+      </div>
+
+      <div class="card" id="card-upload">
+        <div class="dropzone" id="dropzone">
+          <input type="file" id="input-arquivo" accept=".png,.jpg,.jpeg,.webp" hidden />
+          <div class="dropzone-conteudo">
+            <span class="dropzone-icone">📤</span>
+            <p class="dropzone-titulo">ARRASTE O PRINT DO BI AQUI</p>
+            <p class="dropzone-ou">ou</p>
+            <button class="btn-secondary" id="btn-selecionar-imagem">SELECIONAR IMAGEM</button>
+            <p class="dropzone-formatos">Formatos aceitos: PNG, JPG, JPEG, WebP</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Área de progresso / preview / conferência (oculta até haver upload) -->
+      <div class="card" id="card-processamento" hidden>
+        <div class="processamento-grid">
+          <div class="preview-coluna">
+            <h4>Preview</h4>
+            <img id="preview-imagem" alt="Preview do print enviado" />
+          </div>
+          <div class="conferencia-coluna">
+            <h4>Dados extraídos <span id="badge-confianca" class="badge-confianca"></span></h4>
+            <div id="progresso-ocr" class="progresso-ocr">
+              <div class="progresso-barra"><div class="progresso-fill" id="progresso-fill"></div></div>
+              <span id="progresso-texto">Lendo imagem…</span>
+            </div>
+            <div id="aviso-baixa-confianca" class="aviso-confianca" hidden>
+              ⚠️ Verifique os dados extraídos antes de salvar.
+            </div>
+
+            <details id="painel-diagnostico-ocr" class="diagnostico-ocr" hidden>
+              <summary>🔍 Ver diagnóstico do OCR (linhas de texto reconhecidas)</summary>
+              <p class="texto-secundario" style="margin:8px 0;">
+                Se algum campo não foi lido corretamente, copie o texto abaixo e envie de volta —
+                ele mostra exatamente o que o OCR reconheceu e onde, o que ajuda a ajustar as regras de leitura.
+              </p>
+              <button type="button" class="btn-secondary" id="btn-copiar-diagnostico" style="margin-bottom:8px;">📋 Copiar diagnóstico</button>
+              <pre id="conteudo-diagnostico-ocr"></pre>
+            </details>
+
+            <form id="form-conferencia" class="form-conferencia" hidden>
+              <div class="form-row">
+                <label>Data do snapshot <input type="date" id="campo-data" required /></label>
+                <label>Hora do snapshot <input type="time" id="campo-hora" required /></label>
+              </div>
+              <div class="form-row">
+                <label>Fornecedora <input type="text" id="campo-fornecedora" list="lista-fornecedoras" required /></label>
+                <label>Grupo <input type="text" id="campo-grupo" /></label>
+              </div>
+              <datalist id="lista-fornecedoras"></datalist>
+
+              <div class="form-row">
+                <label>Total da base <input type="number" id="campo-total-base" required /></label>
+                <label>Concordância <input type="number" id="campo-concordancia" required /></label>
+                <label>Divergência <input type="number" id="campo-divergencia" required /></label>
+                <label>Neutros (fora do cálculo) <input type="number" id="campo-neutros" /></label>
+              </div>
+              <div class="form-row">
+                <label>Maior divergência <input type="text" id="campo-maior-divergencia" /></label>
+                <label>Quantidade <input type="number" id="campo-qtd-maior-divergencia" /></label>
+              </div>
+
+              <h4 class="matriz-form-titulo">Matriz Fornecedora × BackOffice</h4>
+              <div class="tabela-matriz-form-wrap">
+                <table class="tabela-matriz-form" id="tabela-matriz-form"><!-- injetada via JS --></table>
+              </div>
+
+              <div class="form-acoes">
+                <button type="button" class="btn-secondary" id="btn-cancelar-snapshot">CANCELAR</button>
+                <button type="submit" class="btn-primary" id="btn-confirmar-snapshot">CONFIRMAR SNAPSHOT</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+
+      <!-- ---------- 5. HISTÓRICO (dentro da aba Snapshots) ---------- -->
+      <div class="card">
+        <div class="card-header card-header-flex">
+          <h3>📜 Histórico de snapshots</h3>
+          <div class="filtros-historico">
+            <input type="search" id="busca-historico" placeholder="Buscar fornecedora…" />
+            <select id="filtro-fornecedora-historico"><option value="">Todas as fornecedoras</option></select>
+          </div>
+        </div>
+        <div class="tabela-wrap">
+          <table class="tabela-dados" id="tabela-historico">
+            <thead>
+              <tr>
+                <th data-sort="data">Data</th>
+                <th data-sort="hora">Hora</th>
+                <th data-sort="fornecedora">Fornecedora</th>
+                <th data-sort="totalBase">Total da base</th>
+                <th data-sort="concordancia">Concordância</th>
+                <th data-sort="divergencia">Divergência</th>
+                <th data-sort="maiorDivergencia">Maior divergência</th>
+                <th data-sort="quantidadeMaiorDivergencia">Qtd.</th>
+                <th data-sort="status">Status</th>
+                <th>Ações</th>
+              </tr>
+            </thead>
+            <tbody id="corpo-tabela-historico"><!-- injetado via JS --></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ---------- 6. EVOLUÇÃO ---------- -->
+    <section class="secao" id="secao-evolucao">
+      <div class="secao-header">
+        <h2>Evolução histórica</h2>
+        <div class="filtros-periodo" id="filtros-periodo-evolucao">
+          <button data-dias="7" class="chip">7 dias</button>
+          <button data-dias="15" class="chip">15 dias</button>
+          <button data-dias="30" class="chip">30 dias</button>
+          <button data-dias="todos" class="chip is-active">Todo histórico</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header"><h3>📈 Concordância vs. 📉 Divergência</h3></div>
+        <canvas id="grafico-concordancia-divergencia" height="90"></canvas>
+      </div>
+
+      <div class="grid-2col">
+        <div class="card">
+          <div class="card-header"><h3>👥 Evolução do total da base</h3></div>
+          <canvas id="grafico-total-base" height="110"></canvas>
+        </div>
+        <div class="card">
+          <div class="card-header"><h3>⚡ Evolução dos status</h3></div>
+          <canvas id="grafico-status" height="110"></canvas>
+        </div>
+      </div>
+    </section>
+
+    <!-- ---------- 7. FORNECEDORAS ---------- -->
+    <section class="secao" id="secao-fornecedoras">
+      <div class="secao-header">
+        <h2>Ranking de fornecedoras</h2>
+        <p class="secao-desc">Classificadas pela evolução da concordância entre os dois snapshots mais recentes de cada uma.</p>
+      </div>
+      <div class="card">
+        <div class="tabela-wrap">
+          <table class="tabela-dados" id="tabela-fornecedoras">
+            <thead>
+              <tr>
+                <th>Ranking</th><th>Fornecedora</th><th>Concordância</th><th>Δ dia</th>
+                <th>Divergência</th><th>Δ Divergência</th><th>Status</th>
+              </tr>
+            </thead>
+            <tbody id="corpo-tabela-fornecedoras"><!-- injetado via JS --></tbody>
+          </table>
+        </div>
+      </div>
+      <div class="card" id="card-detalhe-fornecedora" hidden>
+        <div class="card-header"><h3 id="titulo-detalhe-fornecedora">Evolução histórica</h3></div>
+        <canvas id="grafico-detalhe-fornecedora" height="90"></canvas>
+      </div>
+    </section>
+
+    <!-- ---------- 8. MOVIMENTAÇÕES ---------- -->
+    <section class="secao" id="secao-movimentacoes">
+      <div class="secao-header">
+        <h2>Movimentações</h2>
+        <p class="secao-desc" id="periodo-movimentacoes">Snapshot anterior × snapshot atual</p>
+      </div>
+      <div class="movimentacoes-colunas">
+        <div class="card coluna-melhorias">
+          <div class="card-header"><h3>🟢 MELHORIAS</h3></div>
+          <div id="lista-melhorias" class="lista-movimentacoes"></div>
+        </div>
+        <div class="card coluna-pioras">
+          <div class="card-header"><h3>🔴 PIORAS</h3></div>
+          <div id="lista-pioras" class="lista-movimentacoes"></div>
+        </div>
+        <div class="card coluna-neutro">
+          <div class="card-header"><h3>⚪ SEM ALTERAÇÃO</h3></div>
+          <div id="lista-sem-alteracao" class="lista-movimentacoes"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ---------- 10. ALERTAS ---------- -->
+    <section class="secao" id="secao-alertas">
+      <div class="secao-header">
+        <h2>Alertas automáticos</h2>
+        <p class="secao-desc">Gerados a partir da comparação entre o snapshot mais recente e o anterior.</p>
+      </div>
+      <div id="lista-alertas" class="lista-alertas"><!-- injetado via JS --></div>
+    </section>
+
+    <!-- ---------- 9. MATRIZ ---------- -->
+    <section class="secao" id="secao-matriz">
+      <div class="secao-header">
+        <h2>Matriz Fornecedora × BackOffice</h2>
+        <div class="filtros-periodo">
+          <label class="select-fornecedora-matriz-label">
+            Fornecedora:
+            <select id="select-fornecedora-matriz"><option value="__global__">Todas (agregado)</option></select>
+          </label>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-header"><h3>Valor atual e variação vs. snapshot anterior</h3></div>
+        <div class="legenda-matriz">
+          <span><i class="dot dot-verde"></i> melhoria</span>
+          <span><i class="dot dot-vermelho"></i> piora</span>
+          <span><i class="dot dot-neutro"></i> sem alteração</span>
+          <span><i class="dot" style="background:var(--cinza-neutro); opacity:0.6;"></i> neutro / fora do cálculo — não necessita atenção</span>
+        </div>
+        <div class="tabela-matriz-wrap">
+          <table class="tabela-matriz" id="tabela-matriz-visual"><!-- injetada via JS --></table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ---------- CONFIGURAÇÕES ---------- -->
+    <section class="secao" id="secao-configuracoes">
+      <div class="secao-header">
+        <h2>Configurações</h2>
+        <p class="secao-desc">Armazenamento, exportação e manutenção dos dados.</p>
+      </div>
+
+      <div class="grid-2col">
+        <div class="card">
+          <div class="card-header"><h3>💾 Armazenamento</h3></div>
+          <p>Motor ativo: <strong id="motor-armazenamento">—</strong></p>
+          <p class="texto-secundario">
+            Todos os dados ficam salvos apenas neste navegador (IndexedDB, com fallback
+            para localStorage). Nada é enviado a servidores externos. Isso significa que
+            limpar os dados do navegador, ou acessar de outro computador, não traz o
+            histórico — use a exportação regularmente como backup.
+          </p>
+        </div>
+
+        <div class="card">
+          <div class="card-header"><h3>📤 Exportação</h3></div>
+          <div class="botoes-exportacao">
+            <button class="btn-secondary" id="btn-exportar-json">EXPORTAR HISTÓRICO (JSON)</button>
+            <button class="btn-secondary" id="btn-exportar-csv">EXPORTAR CSV</button>
+            <button class="btn-secondary" id="btn-exportar-relatorio">EXPORTAR RELATÓRIO (HTML)</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="card card-perigo">
+        <div class="card-header"><h3>🗑️ Zona de risco</h3></div>
+        <p class="texto-secundario">Remove permanentemente todos os snapshots salvos neste navegador. Exporte um backup antes.</p>
+        <button class="btn-perigo" id="btn-limpar-tudo">APAGAR TODO O HISTÓRICO</button>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<!-- Modal de visualização de snapshot -->
+<div class="modal-overlay" id="modal-overlay" hidden>
+  <div class="modal">
+    <div class="modal-header">
+      <h3 id="modal-titulo">Snapshot</h3>
+      <button class="btn-icon" id="btn-fechar-modal">✕</button>
+    </div>
+    <div class="modal-corpo" id="modal-corpo"><!-- injetado via JS --></div>
+  </div>
+</div>
+
+<div class="toast-container" id="toast-container"></div>
+
+<!-- ============================== BIBLIOTECAS EXTERNAS (CDN) ============================== -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+
+<!-- ============================== MÓDULOS DO APP ============================== -->
+<script>
+/* ===== config.js ===== */
+/**
+ * config.js
+ * ---------------------------------------------------------------------------
+ * Constantes compartilhadas entre todos os módulos (nomes de status,
+ * paleta de cores usada nos gráficos, listas padrão). Mantido separado para
+ * que o layout do BI (5 status, nomes exatos) fique documentado em um único
+ * lugar — se o BI mudar de layout um dia, é aqui que se ajusta.
+ * ---------------------------------------------------------------------------
+ */
+(function (global) {
+  "use strict";
+
+  // Ordem e nomes EXATOS dos status, linhas e colunas da matriz do BI.
+  const STATUSES = [
+    "Inexistente",
+    "Em ativação/validação",
+    "Ativo",
+    "Cancelado",
+    "Devolvido/Realocado",
+  ];
+
+  // Abreviações curtas usadas em rótulos de gráfico/tabela onde o espaço é pequeno.
+  const STATUS_ABREV = {
+    "Inexistente": "Inexistente",
+    "Em ativação/validação": "Ativação/Validação",
+    "Ativo": "Ativo",
+    "Cancelado": "Cancelado",
+    "Devolvido/Realocado": "Devolvido/Realocado",
+  };
+
+  /** Monta a chave usada no objeto `matriz` de um snapshot para uma combinação linha×coluna. */
+  function chaveMatriz(linha, coluna) {
+    return `${linha}|${coluna}`;
+  }
+
+  /** Lista das 25 combinações possíveis (linha × coluna), na ordem do BI. */
+  function todasCombinacoes() {
+    const combos = [];
+    for (const linha of STATUSES) {
+      for (const coluna of STATUSES) {
+        combos.push({ linha, coluna, chave: chaveMatriz(linha, coluna) });
+      }
+    }
+    return combos;
+  }
+
+  const CORES = {
+    verdeIgreen: "#1F9D5A",
+    verdeClaro: "#4ADE80",
+    vermelho: "#F87171",
+    amareloAlerta: "#FBBF24",
+    cinzaNeutro: "#94A3B8",
+    azulDestaque: "#38BDF8",
+  };
+
+  const FORNECEDORAS_PADRAO = [
+    "SUNCLICK", "COTESA", "THOPEN", "MOVE", "VANTAGE", "FARO", "REENERGISA", "BOM FUTURO",
+  ];
+
+  global.INDEXApp = global.INDEXApp || {};
+  global.INDEXApp.Config = {
+    STATUSES,
+    STATUS_ABREV,
+    CORES,
+    FORNECEDORAS_PADRAO,
+    chaveMatriz,
+    todasCombinacoes,
+  };
+})(window);
+
+
+/* ===== storage.js ===== */
+/**
+ * storage.js
+ * ---------------------------------------------------------------------------
+ * Camada de persistência do INDEX. Hoje grava tudo no navegador (IndexedDB,
+ * com fallback automático para localStorage em navegadores/contextos sem
+ * suporte). O restante do app NUNCA acessa IndexedDB/localStorage direto —
+ * sempre passa por estas funções. Isso é o que torna possível, no futuro,
+ * trocar o "motor" de armazenamento por Firebase/Supabase/API sem tocar em
+ * nenhuma outra tela: basta reimplementar estas mesmas funções mantendo a
+ * mesma assinatura (todas retornam Promises).
+ *
+ * Estrutura de um snapshot (um "print" registrado):
+ * {
+ *   id: string,                 // uuid gerado no upload
+ *   data: "YYYY-MM-DD",
+ *   hora: "HH:MM",
+ *   fornecedora: string,
+ *   grupo: string,
+ *   totalBase: number,
+ *   concordancia: number,
+ *   divergencia: number,
+ *   maiorDivergencia: string,          // ex: "Ativo → Cancelado"
+ *   quantidadeMaiorDivergencia: number,
+ *   matriz: { "Inexistente|Inexistente": number, ... 25 chaves },
+ *   totalLinhas: { "Inexistente": number, ... },
+ *   totalColunas: { "Inexistente": number, ... },
+ *   ocrConfidence: number,      // 0-100, quão confiável foi a leitura automática
+ *   status: "OK" | "Revisar" | "Manual",
+ *   origem: "ocr" | "manual",
+ *   criadoEm: string (ISO timestamp)
+ * }
+ * ---------------------------------------------------------------------------
+ */
+(function (global) {
+  "use strict";
+
+  const DB_NAME = "index_conciliacao_db";
+  const DB_VERSION = 1;
+  const STORE_NAME = "snapshots";
+  const LOCAL_STORAGE_KEY = "index_conciliacao_snapshots_v1";
+
+  let dbPromise = null;
+  let useLocalStorageFallback = false;
+
+  /** Abre (ou cria) o banco IndexedDB. Só é chamado uma vez; o resultado é cacheado. */
+  function abrirBanco() {
+    if (dbPromise) return dbPromise;
+
+    dbPromise = new Promise((resolve, reject) => {
+      if (!("indexedDB" in global)) {
+        useLocalStorageFallback = true;
+        resolve(null);
+        return;
+      }
+
+      const req = indexedDB.open(DB_NAME, DB_VERSION);
+
+      req.onupgradeneeded = (event) => {
+        const db = event.target.result;
+        if (!db.objectStoreNames.contains(STORE_NAME)) {
+          const store = db.createObjectStore(STORE_NAME, { keyPath: "id" });
+          store.createIndex("porData", "data", { unique: false });
+          store.createIndex("porFornecedora", "fornecedora", { unique: false });
+        }
+      };
+
+      req.onsuccess = (event) => resolve(event.target.result);
+
+      req.onerror = () => {
+        // Ambiente sem IndexedDB disponível (ex: aba anônima com restrições) -> fallback
+        useLocalStorageFallback = true;
+        resolve(null);
+      };
+    });
+
+    return dbPromise;
+  }
+
+  // ---- helpers de fallback via localStorage -------------------------------
+
+  function lerTudoLocalStorage() {
+    try {
+      const raw = global.localStorage.getItem(LOCAL_STORAGE_KEY);
+      return raw ? JSON.parse(raw) : [];
+    } catch (e) {
+      console.error("Falha ao ler localStorage:", e);
+      return [];
+    }
+  }
+
+  function gravarTudoLocalStorage(lista) {
+    try {
+      global.localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(lista));
+      return true;
+    } catch (e) {
+      console.error("Falha ao gravar localStorage:", e);
+      return false;
+    }
+  }
+
+  // ---- API pública ----------------------------------------------------------
+
+  /** Gera um id único simples (sem dependências externas). */
+  function gerarId() {
+    return "snap_" + Date.now().toString(36) + "_" + Math.random().toString(36).slice(2, 9);
+  }
+
+  /**
+   * Salva um novo snapshot. Nunca sobrescreve um snapshot existente — cada
+   * upload gera um novo registro histórico (regra fixada no briefing).
+   */
+  async function salvarSnapshot(snapshot) {
+    const registro = Object.assign(
+      { id: gerarId(), criadoEm: new Date().toISOString() },
+      snapshot
+    );
+
+    const db = await abrirBanco();
+    if (useLocalStorageFallback || !db) {
+      const lista = lerTudoLocalStorage();
+      lista.push(registro);
+      gravarTudoLocalStorage(lista);
+      return registro;
+    }
+
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction(STORE_NAME, "readwrite");
+      tx.objectStore(STORE_NAME).add(registro);
+      tx.oncomplete = () => resolve(registro);
+      tx.onerror = () => reject(tx.error);
+    });
+  }
+
+  /** Carrega todos os snapshots, ordenados por data+hora (mais antigo primeiro). */
+  async function carregarSnapshots() {
+    const db = await abrirBanco();
+    let lista;
+
+    if (useLocalStorageFallback || !db) {
+      lista = lerTudoLocalStorage();
+    } else {
+      lista = await new Promise((resolve, reject) => {
+        const tx = db.transaction(STORE_NAME, "readonly");
+        const req = tx.objectStore(STORE_NAME).getAll();
+        req.onsuccess = () => resolve(req.result || []);
+        req.onerror = () => reject(req.error);
+      });
+    }
+
+    lista.sort((a, b) => {
+      const chaveA = `${a.data}T${a.hora || "00:00"}`;
+      const chaveB = `${b.data}T${b.hora || "00:00"}`;
+      if (chaveA < chaveB) return -1;
+      if (chaveA > chaveB) return 1;
+      return 0;
+    });
+    return lista;
+  }
+
+  /** Atualiza campos de um snapshot existente (usado na tela de conferência/edição). */
+  async function atualizarSnapshot(id, alteracoes) {
+    const db = await abrirBanco();
+
+    if (useLocalStorageFallback || !db) {
+      const lista = lerTudoLocalStorage();
+      const idx = lista.findIndex((s) => s.id === id);
+      if (idx === -1) throw new Error("Snapshot não encontrado: " + id);
+      lista[idx] = Object.assign({}, lista[idx], alteracoes, { editadoEm: new Date().toISOString() });
+      gravarTudoLocalStorage(lista);
+      return lista[idx];
+    }
+
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction(STORE_NAME, "readwrite");
+      const store = tx.objectStore(STORE_NAME);
+      const getReq = store.get(id);
+      getReq.onsuccess = () => {
+        const atual = getReq.result;
+        if (!atual) {
+          reject(new Error("Snapshot não encontrado: " + id));
+          return;
+        }
+        const atualizado = Object.assign({}, atual, alteracoes, { editadoEm: new Date().toISOString() });
+        store.put(atualizado);
+        tx.oncomplete = () => resolve(atualizado);
+      };
+      getReq.onerror = () => reject(getReq.error);
+    });
+  }
+
+  /** Remove um snapshot permanentemente. */
+  async function excluirSnapshot(id) {
+    const db = await abrirBanco();
+
+    if (useLocalStorageFallback || !db) {
+      const lista = lerTudoLocalStorage().filter((s) => s.id !== id);
+      gravarTudoLocalStorage(lista);
+      return true;
+    }
+
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction(STORE_NAME, "readwrite");
+      tx.objectStore(STORE_NAME).delete(id);
+      tx.oncomplete = () => resolve(true);
+      tx.onerror = () => reject(tx.error);
+    });
+  }
+
+  /** Limpa TODO o histórico (usado apenas em Configurações, com confirmação). */
+  async function limparTudo() {
+    const db = await abrirBanco();
+    if (useLocalStorageFallback || !db) {
+      gravarTudoLocalStorage([]);
+      return true;
+    }
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction(STORE_NAME, "readwrite");
+      tx.objectStore(STORE_NAME).clear();
+      tx.oncomplete = () => resolve(true);
+      tx.onerror = () => reject(tx.error);
+    });
+  }
+
+  function qualMotorEstaAtivo() {
+    return useLocalStorageFallback ? "localStorage" : "IndexedDB";
+  }
+
+  global.INDEXApp = global.INDEXApp || {};
+  global.INDEXApp.Storage = {
+    salvarSnapshot,
+    carregarSnapshots,
+    atualizarSnapshot,
+    excluirSnapshot,
+    limparTudo,
+    qualMotorEstaAtivo,
+    gerarId,
+  };
+})(window);
+
+
+/* ===== comparison.js ===== */
+/**
+ * comparison.js
+ * ---------------------------------------------------------------------------
+ * Motor analítico do INDEX. Não toca em DOM nem em armazenamento — recebe a
+ * lista de snapshots (já carregada pelo storage.js) e devolve estruturas de
+ * dados prontas para as telas (dashboard.js) desenharem.
+ *
+ * Convenção usada em todo o arquivo:
+ *  - "global" = agregando TODAS as fornecedoras de um mesmo dia (usado no
+ *    INÍCIO, EVOLUÇÃO, MATRIZ agregada);
+ *  - "por fornecedora" = comparando os dois snapshots mais recentes de UMA
+ *    fornecedora específica (usado em FORNECEDORAS, MOVIMENTAÇÕES).
+ * ---------------------------------------------------------------------------
+ */
+(function (global) {
+  "use strict";
+
+  const { STATUSES, todasCombinacoes, chaveMatriz } = global.INDEXApp.Config;
+
+  // ---------------------------------------------------------------------
+  // Agrupamento básico
+  // ---------------------------------------------------------------------
+
+  /** Agrupa snapshots por data (string YYYY-MM-DD) -> array de snapshots daquele dia. */
+  function agruparPorData(historico) {
+    const mapa = new Map();
+    for (const snap of historico) {
+      if (!mapa.has(snap.data)) mapa.set(snap.data, []);
+      mapa.get(snap.data).push(snap);
+    }
+    return mapa;
+  }
+
+  /** Lista de datas distintas, em ordem crescente. */
+  function datasOrdenadas(historico) {
+    return Array.from(new Set(historico.map((s) => s.data))).sort();
+  }
+
+  /** Agrupa snapshots por fornecedora -> array ordenado por data crescente. */
+  function agruparPorFornecedora(historico) {
+    const mapa = new Map();
+    for (const snap of historico) {
+      if (!mapa.has(snap.fornecedora)) mapa.set(snap.fornecedora, []);
+      mapa.get(snap.fornecedora).push(snap);
+    }
+    for (const lista of mapa.values()) {
+      lista.sort((a, b) => (`${a.data}T${a.hora || ""}` < `${b.data}T${b.hora || ""}` ? -1 : 1));
+    }
+    return mapa;
+  }
+
+  /** Soma todos os snapshots de um mesmo dia em um único snapshot "agregado". */
+  function agregarSnapshotsDoDia(snapshotsDoDia) {
+    const agregado = {
+      data: snapshotsDoDia[0]?.data,
+      totalBase: 0,
+      concordancia: 0,
+      divergencia: 0,
+      matriz: {},
+      totalLinhas: {},
+      totalColunas: {},
+      fornecedoras: snapshotsDoDia.map((s) => s.fornecedora),
+    };
+    for (const { chave } of todasCombinacoes()) agregado.matriz[chave] = 0;
+    for (const st of STATUSES) {
+      agregado.totalLinhas[st] = 0;
+      agregado.totalColunas[st] = 0;
+    }
+
+    for (const snap of snapshotsDoDia) {
+      agregado.totalBase += snap.totalBase || 0;
+      agregado.concordancia += snap.concordancia || 0;
+      agregado.divergencia += snap.divergencia || 0;
+      for (const { chave } of todasCombinacoes()) {
+        agregado.matriz[chave] += (snap.matriz && snap.matriz[chave]) || 0;
+      }
+      for (const st of STATUSES) {
+        agregado.totalLinhas[st] += (snap.totalLinhas && snap.totalLinhas[st]) || 0;
+        agregado.totalColunas[st] += (snap.totalColunas && snap.totalColunas[st]) || 0;
+      }
+    }
+    agregado.concordanciaPct = agregado.totalBase ? agregado.concordancia / agregado.totalBase : 0;
+    agregado.divergenciaPct = agregado.totalBase ? agregado.divergencia / agregado.totalBase : 0;
+    return agregado;
+  }
+
+  /** Retorna o snapshot agregado do dia mais recente e do dia imediatamente anterior. */
+  function obterHojeOntemGlobal(historico) {
+    const datas = datasOrdenadas(historico);
+    if (datas.length === 0) return { hoje: null, ontem: null, dataHoje: null, dataOntem: null };
+    const porData = agruparPorData(historico);
+    const dataHoje = datas[datas.length - 1];
+    const dataOntem = datas.length > 1 ? datas[datas.length - 2] : null;
+    return {
+      hoje: agregarSnapshotsDoDia(porData.get(dataHoje)),
+      ontem: dataOntem ? agregarSnapshotsDoDia(porData.get(dataOntem)) : null,
+      dataHoje,
+      dataOntem,
+    };
+  }
+
+  // ---------------------------------------------------------------------
+  // compararSnapshots — comparação célula a célula entre dois snapshots
+  // (usada tanto no nível global quanto por fornecedora)
+  // ---------------------------------------------------------------------
+
+  /**
+   * Compara dois snapshots (ou agregados) e retorna, para cada uma das 25
+   * combinações, o valor atual, anterior, a variação e uma classificação
+   * MELHOROU / PIOROU / IGUAL — considerando que na diagonal (concordância)
+   * "aumentar" é bom, e fora da diagonal (divergência) "aumentar" é ruim.
+   */
+  function compararSnapshots(atual, anterior) {
+    if (!atual || !anterior) return null;
+
+    const detalhes = todasCombinacoes().map(({ linha, coluna, chave }) => {
+      const valorAtual = (atual.matriz && atual.matriz[chave]) || 0;
+      const valorAnterior = (anterior.matriz && anterior.matriz[chave]) || 0;
+      const variacao = valorAtual - valorAnterior;
+      const ehDiagonal = linha === coluna;
+      const ehNeutro =
+        !ehDiagonal &&
+        ((atual.matrizNeutros && atual.matrizNeutros[chave]) || (anterior.matrizNeutros && anterior.matrizNeutros[chave]));
+      let tipo = "IGUAL";
+      if (ehNeutro) tipo = "NEUTRO";
+      else if (variacao > 0) tipo = ehDiagonal ? "MELHOROU" : "PIOROU";
+      else if (variacao < 0) tipo = ehDiagonal ? "PIOROU" : "MELHOROU";
+      return { linha, coluna, chave, valorAtual, valorAnterior, variacao, ehDiagonal, ehNeutro, tipo };
+    });
+
+    const melhorias = detalhes.filter((d) => d.tipo === "MELHOROU" && d.variacao !== 0);
+    const pioras = detalhes.filter((d) => d.tipo === "PIOROU" && d.variacao !== 0);
+    const neutros = detalhes.filter((d) => d.tipo === "NEUTRO");
+    const semAlteracao = detalhes.filter((d) => d.tipo === "IGUAL" && d.variacao === 0);
+
+    const totalBaseAtual = atual.totalBase || 0;
+    const totalBaseAnterior = anterior.totalBase || 0;
+    const concordanciaPctAtual = atual.concordanciaPct !== undefined ? atual.concordanciaPct : (atual.concordancia / (atual.totalBase || 1));
+    const concordanciaPctAnterior = anterior.concordanciaPct !== undefined ? anterior.concordanciaPct : (anterior.concordancia / (anterior.totalBase || 1));
+
+    // Estimativa agregada de clientes movimentados: metade da soma dos módulos
+    // das variações das 25 combinações (cada cliente que muda de célula gera
+    // +1 em uma célula e -1 em outra — por isso dividir por 2). A mesma lógica
+    // documentada no INDEX em Excel.
+    const somaAbsVariacoes = detalhes.reduce((acc, d) => acc + Math.abs(d.variacao), 0);
+    const clientesMovimentados = Math.round(somaAbsVariacoes / 2);
+    const clientesSemAlteracao = Math.max(0, totalBaseAtual - clientesMovimentados);
+
+    return {
+      detalhes,
+      melhorias,
+      pioras,
+      neutros,
+      semAlteracao,
+      totalBaseAtual,
+      totalBaseAnterior,
+      deltaTotalBase: totalBaseAtual - totalBaseAnterior,
+      concordanciaPctAtual,
+      concordanciaPctAnterior,
+      deltaConcordanciaPP: concordanciaPctAtual - concordanciaPctAnterior,
+      divergenciaPctAtual: 1 - concordanciaPctAtual,
+      divergenciaPctAnterior: 1 - concordanciaPctAnterior,
+      deltaDivergenciaPP: (1 - concordanciaPctAtual) - (1 - concordanciaPctAnterior),
+      clientesMovimentados,
+      clientesSemAlteracao,
+    };
+  }
+
+  // ---------------------------------------------------------------------
+  // calcularEvolucao — série temporal para os gráficos da aba EVOLUÇÃO
+  // ---------------------------------------------------------------------
+
+  /**
+   * @param historico lista completa de snapshots
+   * @param dias 'todos' | 7 | 15 | 30
+   */
+  function calcularEvolucao(historico, dias) {
+    const datas = datasOrdenadas(historico);
+    const porData = agruparPorData(historico);
+    const datasFiltradas = dias === "todos" ? datas : datas.slice(-dias);
+
+    return datasFiltradas.map((data) => {
+      const agregado = agregarSnapshotsDoDia(porData.get(data));
+      return {
+        data,
+        totalBase: agregado.totalBase,
+        concordanciaPct: agregado.concordanciaPct,
+        divergenciaPct: agregado.divergenciaPct,
+        porStatus: agregado.totalLinhas, // evolução de Inexistente/Ativo/... (visão "fornecedora")
+      };
+    });
+  }
+
+  // ---------------------------------------------------------------------
+  // calcularRanking — ranking de fornecedoras por evolução
+  // ---------------------------------------------------------------------
+
+  function calcularRanking(historico) {
+    const porFornecedora = agruparPorFornecedora(historico);
+    const linhas = [];
+
+    for (const [fornecedora, snaps] of porFornecedora.entries()) {
+      const atual = snaps[snaps.length - 1];
+      const anterior = snaps.length > 1 ? snaps[snaps.length - 2] : null;
+
+      const concordanciaAtual = atual.totalBase ? atual.concordancia / atual.totalBase : 0;
+      const concordanciaAnterior = anterior && anterior.totalBase ? anterior.concordancia / anterior.totalBase : null;
+      const divergenciaAtual = 1 - concordanciaAtual;
+      const divergenciaAnterior = concordanciaAnterior !== null ? 1 - concordanciaAnterior : null;
+
+      const deltaPP = concordanciaAnterior !== null ? concordanciaAtual - concordanciaAnterior : null;
+      const deltaDivergenciaPP = divergenciaAnterior !== null ? divergenciaAtual - divergenciaAnterior : null;
+
+      linhas.push({
+        fornecedora,
+        totalSnapshots: snaps.length,
+        dataAtual: atual.data,
+        concordanciaAtual,
+        concordanciaAnterior,
+        deltaPP,
+        divergenciaAtual,
+        divergenciaAnterior,
+        deltaDivergenciaPP,
+        totalBaseAtual: atual.totalBase,
+        maiorDivergencia: atual.maiorDivergencia,
+        quantidadeMaiorDivergencia: atual.quantidadeMaiorDivergencia,
+      });
+    }
+
+    // Ordena por evolução (deltaPP) decrescente; quem não tem comparativo vai para o fim.
+    linhas.sort((a, b) => {
+      if (a.deltaPP === null && b.deltaPP === null) return 0;
+      if (a.deltaPP === null) return 1;
+      if (b.deltaPP === null) return -1;
+      return b.deltaPP - a.deltaPP;
+    });
+
+    linhas.forEach((linha, i) => {
+      linha.posicao = i + 1;
+      const ehUltimoColocado = i === linhas.length - 1;
+      if (linha.deltaPP === null) linha.medalha = "—";
+      else if (ehUltimoColocado && linha.deltaPP < 0 && linhas.length > 1) linha.medalha = "🔴";
+      else if (i === 0) linha.medalha = "🥇";
+      else if (i === 1) linha.medalha = "🥈";
+      else if (i === 2) linha.medalha = "🥉";
+      else linha.medalha = "";
+      linha.status = linha.deltaPP === null ? "SEM COMPARATIVO" : linha.deltaPP > 0 ? "MELHOROU" : linha.deltaPP < 0 ? "PIOROU" : "ESTÁVEL";
+    });
+
+    return linhas;
+  }
+
+  // ---------------------------------------------------------------------
+  // gerarAlertas — regras automáticas de alerta
+  // ---------------------------------------------------------------------
+
+  function gerarAlertas(historico) {
+    const alertas = [];
+    const { hoje, ontem } = obterHojeOntemGlobal(historico);
+    const ranking = calcularRanking(historico);
+
+    if (hoje && ontem) {
+      const cmp = compararSnapshots(hoje, ontem);
+
+      // Maiores pioras de divergência (fora da diagonal, variação positiva)
+      const piorasOrdenadas = cmp.pioras
+        .filter((d) => !d.ehDiagonal)
+        .sort((a, b) => b.variacao - a.variacao)
+        .slice(0, 3);
+      for (const p of piorasOrdenadas) {
+        alertas.push({
+          tipo: "piora",
+          icone: "🔴",
+          titulo: "Divergência aumentou",
+          mensagem: `"${p.linha} → ${p.coluna}" aumentou ${p.variacao.toLocaleString("pt-BR")} clientes.`,
+        });
+      }
+
+      // Melhorias mais relevantes (redução de divergência)
+      const melhoriasOrdenadas = cmp.melhorias
+        .filter((d) => !d.ehDiagonal)
+        .sort((a, b) => a.variacao - b.variacao)
+        .slice(0, 2);
+      for (const m of melhoriasOrdenadas) {
+        alertas.push({
+          tipo: "melhoria",
+          icone: "🟢",
+          titulo: "Divergência reduzida",
+          mensagem: `"${m.linha} → ${m.coluna}" reduziu ${Math.abs(m.variacao).toLocaleString("pt-BR")} clientes.`,
+        });
+      }
+
+      if (cmp.deltaConcordanciaPP > 0) {
+        alertas.push({
+          tipo: "melhoria",
+          icone: "🟢",
+          titulo: "Concordância melhorou",
+          mensagem: `A concordância geral evoluiu +${(cmp.deltaConcordanciaPP * 100).toFixed(2).replace(".", ",")} p.p. desde o snapshot anterior.`,
+        });
+      } else if (cmp.deltaConcordanciaPP < 0) {
+        alertas.push({
+          tipo: "atencao",
+          icone: "⚠️",
+          titulo: "Concordância caiu",
+          mensagem: `A concordância geral recuou ${(cmp.deltaConcordanciaPP * 100).toFixed(2).replace(".", ",")} p.p. desde o snapshot anterior.`,
+        });
+      }
+
+      // Divergência persistente entre as maiores
+      const maiorDivergenciaAtual = cmp.detalhes
+        .filter((d) => !d.ehDiagonal)
+        .sort((a, b) => b.valorAtual - a.valorAtual)[0];
+      if (maiorDivergenciaAtual && maiorDivergenciaAtual.valorAnterior > 0) {
+        alertas.push({
+          tipo: "atencao",
+          icone: "⚠️",
+          titulo: "Atenção",
+          mensagem: `"${maiorDivergenciaAtual.linha} → ${maiorDivergenciaAtual.coluna}" permanece entre as maiores divergências (${maiorDivergenciaAtual.valorAtual.toLocaleString("pt-BR")} clientes).`,
+        });
+      }
+    }
+
+    // Destaques do ranking de fornecedoras
+    const comparativo = ranking.filter((r) => r.deltaPP !== null);
+    if (comparativo.length > 0) {
+      const melhor = comparativo[0];
+      alertas.push({
+        tipo: "destaque",
+        icone: "🏆",
+        titulo: "Destaque",
+        mensagem: `${melhor.fornecedora} apresentou a maior evolução do período (${melhor.deltaPP > 0 ? "+" : ""}${(melhor.deltaPP * 100).toFixed(2).replace(".", ",")} p.p.).`,
+      });
+      const pior = comparativo[comparativo.length - 1];
+      if (pior.deltaPP < 0) {
+        alertas.push({
+          tipo: "atencao",
+          icone: "⚠️",
+          titulo: "Fornecedora precisa de atenção",
+          mensagem: `${pior.fornecedora} apresentou piora de ${(pior.deltaPP * 100).toFixed(2).replace(".", ",")} p.p. desde o snapshot anterior.`,
+        });
+      }
+    }
+
+    return alertas;
+  }
+
+  // ---------------------------------------------------------------------
+  // calcularIndiceEvolucao — pontuação composta 0-100
+  // ---------------------------------------------------------------------
+
+  function clamp(v, min, max) {
+    return Math.max(min, Math.min(max, v));
+  }
+
+  /**
+   * Índice de Evolução (0-100). Pondera 5 fatores pedidos no briefing:
+   *  1) Evolução da concordância         peso 30
+   *  2) Redução da divergência           peso 25
+   *  3) Redução das principais divergências (top-3 combos fora da diagonal) peso 20
+   *  4) Evolução dos status              peso 15
+   *  5) Consistência ao longo dos dias   peso 10
+   * Cada fator é normalizado para uma sub-nota 0-100; o resultado é a média
+   * ponderada. Todos os pesos e fórmulas ficam expostos no retorno para que a
+   * tela possa "explicar visualmente" a pontuação, como pedido no briefing.
+   */
+  function calcularIndiceEvolucao(historico) {
+    const datas = datasOrdenadas(historico);
+    if (datas.length < 2) {
+      return { pontuacao: null, classificacao: "SEM DADOS SUFICIENTES", fatores: [] };
+    }
+
+    const { hoje, ontem } = obterHojeOntemGlobal(historico);
+    const cmp = compararSnapshots(hoje, ontem);
+
+    // Fator 1: evolução da concordância (uma variação de +/-5 p.p. já satura a nota)
+    const fatorConcordancia = clamp(50 + cmp.deltaConcordanciaPP * 1000, 0, 100);
+
+    // Fator 2: redução da divergência (espelha o fator 1, mas em cima da divergência)
+    const fatorDivergencia = clamp(50 - cmp.deltaDivergenciaPP * 1000, 0, 100);
+
+    // Fator 3: redução das 3 maiores divergências (fora da diagonal) atuais
+    const top3 = cmp.detalhes
+      .filter((d) => !d.ehDiagonal)
+      .sort((a, b) => b.valorAtual - a.valorAtual)
+      .slice(0, 3);
+    const mediaVariacaoTop3 = top3.length
+      ? top3.reduce((acc, d) => acc + d.variacao, 0) / top3.length
+      : 0;
+    const baseTop3 = top3.length
+      ? top3.reduce((acc, d) => acc + Math.max(d.valorAnterior, 1), 0) / top3.length
+      : 1;
+    const fatorTop3 = clamp(50 - (mediaVariacaoTop3 / baseTop3) * 150, 0, 100);
+
+    // Fator 4: evolução dos status — cresceu "Ativo", encolheu "Cancelado"/"Devolvido"/"Inexistente"?
+    const linhasHoje = hoje.totalLinhas;
+    const linhasOntem = ontem.totalLinhas;
+    const baseHoje = hoje.totalBase || 1;
+    const deltaAtivoPct = ((linhasHoje["Ativo"] || 0) - (linhasOntem["Ativo"] || 0)) / baseHoje;
+    const deltaRuinsPct =
+      (((linhasHoje["Cancelado"] || 0) - (linhasOntem["Cancelado"] || 0)) +
+        ((linhasHoje["Devolvido/Realocado"] || 0) - (linhasOntem["Devolvido/Realocado"] || 0)) +
+        ((linhasHoje["Inexistente"] || 0) - (linhasOntem["Inexistente"] || 0))) /
+      baseHoje;
+    const fatorStatus = clamp(50 + (deltaAtivoPct - deltaRuinsPct) * 500, 0, 100);
+
+    // Fator 5: consistência — desvio-padrão da % de concordância nos últimos até 7 dias
+    // (menos oscilação = operação mais estável e previsível = nota maior)
+    const ultimosDias = datas.slice(-7);
+    const porData = agruparPorData(historico);
+    const seriePct = ultimosDias.map((d) => {
+      const agg = agregarSnapshotsDoDia(porData.get(d));
+      return agg.concordanciaPct;
+    });
+    const media = seriePct.reduce((a, b) => a + b, 0) / seriePct.length;
+    const variancia = seriePct.reduce((a, b) => a + Math.pow(b - media, 2), 0) / seriePct.length;
+    const desvio = Math.sqrt(variancia);
+    const fatorConsistencia = clamp(100 - desvio * 1000, 0, 100);
+
+    const fatores = [
+      { nome: "Evolução da concordância", peso: 30, nota: fatorConcordancia },
+      { nome: "Redução da divergência", peso: 25, nota: fatorDivergencia },
+      { nome: "Redução das principais divergências", peso: 20, nota: fatorTop3 },
+      { nome: "Evolução dos status", peso: 15, nota: fatorStatus },
+      { nome: "Consistência ao longo dos dias", peso: 10, nota: fatorConsistencia },
+    ];
+
+    const pontuacao = Math.round(
+      fatores.reduce((acc, f) => acc + f.nota * (f.peso / 100), 0)
+    );
+
+    let classificacao;
+    if (pontuacao >= 85) classificacao = { texto: "Excelente", icone: "🟢" };
+    else if (pontuacao >= 70) classificacao = { texto: "Boa", icone: "🟢" };
+    else if (pontuacao >= 50) classificacao = { texto: "Estável", icone: "🟡" };
+    else if (pontuacao >= 30) classificacao = { texto: "Atenção", icone: "🟠" };
+    else classificacao = { texto: "Crítica", icone: "🔴" };
+
+    return { pontuacao, classificacao, fatores };
+  }
+
+  global.INDEXApp = global.INDEXApp || {};
+  global.INDEXApp.Comparison = {
+    agruparPorData,
+    datasOrdenadas,
+    agruparPorFornecedora,
+    agregarSnapshotsDoDia,
+    obterHojeOntemGlobal,
+    compararSnapshots,
+    calcularEvolucao,
+    calcularRanking,
+    gerarAlertas,
+    calcularIndiceEvolucao,
+  };
+})(window);
+
+
+/* ===== ocr.js ===== */
+/**
+ * ocr.js (v2)
+ * ---------------------------------------------------------------------------
+ * Leitura automática do print do BI, executada 100% no navegador via
+ * Tesseract.js — sem backend. Esta versão foi reconstruída em cima do
+ * layout REAL do BI de referência (cards de KPI com valor + subtexto,
+ * cabeçalho com "Fornecedora:", matriz com número grande + percentual
+ * pequeno por célula, e três categorias de célula — concordância/
+ * divergência/neutro — sinalizadas por cor).
+ *
+ * IMPORTANTE — leia antes de confiar demais nesta camada:
+ * OCR sobre print de tela nunca é 100% confiável. Este módulo é um
+ * "assistente de digitação": tenta preencher os campos automaticamente,
+ * mas o app SEMPRE mostra os valores para conferência antes de salvar
+ * (tela de Snapshots), com indicador de confiança e aviso quando a
+ * confiança está baixa.
+ *
+ * Estratégia (ancorada em textos e cores fixas do layout, não em posição
+ * fixa em pixel — os números mudam de fornecedora para fornecedora, mas os
+ * rótulos e a paleta de cores são sempre os mesmos):
+ *
+ *  1. Rodar OCR e agrupar as palavras em LINHAS (por proximidade vertical),
+ *     reconstruindo o texto lido em cada faixa horizontal da imagem.
+ *  2. Localizar linhas-âncora por texto exato ("Fornecedora:", "TOTAL DA
+ *     BASE", "CONCORDÂNCIA", "DIVERGÊNCIA", "MAIOR DIVERGÊNCIA", "TOTAL
+ *     LINHA", "TOTAL COLUNA", "ÚLTIMA ATUALIZAÇÃO").
+ *  3. Para os 4 cards de KPI: o valor fica na linha abaixo do rótulo, e o
+ *     detalhe (contagem exata) na linha abaixo do valor — sempre nesta
+ *     ordem vertical.
+ *  4. Para a matriz 5x5: localizar a linha de cabeçalho de coluna (as 5
+ *     palavras de status alinhadas horizontalmente) e as 5 linhas de
+ *     cabeçalho de linha (uma palavra de status por linha, à esquerda).
+ *     Cada célula é o número mais próximo da interseção (x da coluna,
+ *     y da linha).
+ *  5. Cor de cada célula (concordância/divergência/neutro) é obtida
+ *     amostrando o pixel de fundo da célula no canvas — não pelo texto —
+ *     porque a categoria "neutro" varia de fornecedora para fornecedora e
+ *     só a cor do próprio BI indica isso de forma confiável.
+ * ---------------------------------------------------------------------------
+ */
+(function (global) {
+  "use strict";
+
+  const { STATUSES, chaveMatriz } = global.INDEXApp.Config;
+
+  // ---- normalização de texto ------------------------------------------------
+
+  function normalizar(texto) {
+    return (texto || "")
+      .toUpperCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/[^A-Z0-9/→\s.,%:-]/g, " ")
+      .replace(/\s+/g, " ")
+      .trim();
+  }
+
+  const VARIANTES_STATUS = {
+    "Inexistente": ["INEXISTENTE"],
+    "Em ativação/validação": ["EM ATIVACAO VALIDACAO", "ATIVACAO VALIDACAO", "ATIVACAO/VALIDACAO", "EM ATIVACAO"],
+    "Ativo": ["ATIVO"],
+    "Cancelado": ["CANCELADO"],
+    "Devolvido/Realocado": ["DEVOLVIDO REALOCADO", "DEVOLVIDO/REALOCADO", "REALOCADO"],
+  };
+
+  function contemVariante(texto, variantes) {
+    return variantes.some((v) => texto.includes(v));
+  }
+
+  function encontrarStatusNoTexto(texto) {
+    for (const status of STATUSES) {
+      if (contemVariante(texto, VARIANTES_STATUS[status])) return status;
+    }
+    return null;
+  }
+
+  /** Acha TODOS os status presentes num texto, na ordem em que aparecem
+   *  (usado para reconstruir "X → Y" quando os dois nomes vêm no mesmo
+   *  bloco de texto, ex.: "MAIOR DIVERGÊNCIA" com o combo em duas linhas). */
+  function encontrarTodosStatusEmOrdem(texto) {
+    const ocorrencias = [];
+    for (const status of STATUSES) {
+      for (const variante of VARIANTES_STATUS[status]) {
+        const idx = texto.indexOf(variante);
+        if (idx !== -1) {
+          ocorrencias.push({ status, idx, tamanho: variante.length });
+          break; // usa a primeira variante que casar para este status
+        }
+      }
+    }
+    ocorrencias.sort((a, b) => a.idx - b.idx);
+    // remove duplicatas do mesmo status (pode ter casado por engano em mais de uma variante)
+    const vistos = new Set();
+    const resultado = [];
+    for (const o of ocorrencias) {
+      if (!vistos.has(o.status)) {
+        vistos.add(o.status);
+        resultado.push(o.status);
+      }
+    }
+    return resultado;
+  }
+
+  // ---- extração de números ---------------------------------------------------
+
+  const REGEX_NUMERO = /-?\d{1,3}(?:\.\d{3})+(?:,\d+)?%?|-?\d+(?:,\d+)?%?/;
+
+  function extrairNumero(texto) {
+    const m = (texto || "").match(REGEX_NUMERO);
+    if (!m) return null;
+    let s = m[0].replace("%", "");
+    const ehPercentual = m[0].includes("%");
+    if (s.includes(",") && s.includes(".")) {
+      s = s.replace(/\./g, "").replace(",", ".");
+    } else if (s.includes(",")) {
+      // O Tesseract às vezes lê o separador de milhar (ponto, no padrão do
+      // BI) como vírgula por engano — ex.: "4.168" sai como "4,168". Se tem
+      // exatamente 3 dígitos depois da vírgula e não é percentual, é quase
+      // certamente separador de milhar mal lido, não parte decimal (nenhum
+      // valor deste BI tem 3 casas decimais).
+      const partes = s.split(",");
+      if (!ehPercentual && partes.length === 2 && partes[1].length === 3) {
+        s = partes.join("");
+      } else {
+        s = s.replace(",", ".");
+      }
+    } else if (s.includes(".") && s.split(".")[1]?.length === 3) {
+      s = s.replace(/\./g, "");
+    }
+    const valor = parseFloat(s);
+    if (Number.isNaN(valor)) return null;
+    return { valor, ehPercentual };
+  }
+
+  function primeiroNumero(texto) {
+    const n = extrairNumero(texto);
+    return n ? n.valor : null;
+  }
+
+  function centro(bbox) {
+    return { x: (bbox.x0 + bbox.x1) / 2, y: (bbox.y0 + bbox.y1) / 2 };
+  }
+  function dist(p1, p2) {
+    return Math.hypot(p1.x - p2.x, p1.y - p2.y);
+  }
+
+  // ---------------------------------------------------------------------
+  // Agrupamento de palavras em linhas
+  // ---------------------------------------------------------------------
+
+  function agruparEmLinhas(palavras) {
+    const alturaMedia =
+      palavras.reduce((acc, p) => acc + (p.bbox.y1 - p.bbox.y0), 0) / (palavras.length || 1);
+    const tolerancia = Math.max(alturaMedia * 0.6, 6);
+    const GAP_LIMITE_SEGMENTO = 45; // lacuna horizontal (px) que separa dois elementos de UI distintos
+                                     // na mesma altura (ex.: dois cards de KPI lado a lado)
+
+    const ordenadas = [...palavras].sort((a, b) => centro(a.bbox).y - centro(b.bbox).y);
+    const bandas = [];
+
+    for (const p of ordenadas) {
+      const y = centro(p.bbox).y;
+      let banda = bandas.find((l) => Math.abs(l.y - y) <= tolerancia);
+      if (!banda) {
+        banda = { y, palavras: [] };
+        bandas.push(banda);
+      }
+      banda.palavras.push(p);
+      banda.y = banda.palavras.reduce((acc, w) => acc + centro(w.bbox).y, 0) / banda.palavras.length;
+    }
+
+    // dentro de cada banda (mesma altura), separa em segmentos por lacuna horizontal —
+    // sem isso, dois cards de KPI vizinhos na mesma linha viram um texto só
+    const linhas = [];
+    for (const banda of bandas) {
+      const porX = [...banda.palavras].sort((a, b) => a.bbox.x0 - b.bbox.x0);
+      let segmentoAtual = [];
+      let fimAnterior = null;
+
+      const finalizarSegmento = () => {
+        if (segmentoAtual.length === 0) return;
+        const texto = normalizar(segmentoAtual.map((p) => p.textoOriginal).join(" "));
+        linhas.push({
+          y: banda.y,
+          palavras: segmentoAtual,
+          texto,
+          x0: Math.min(...segmentoAtual.map((p) => p.bbox.x0)),
+          x1: Math.max(...segmentoAtual.map((p) => p.bbox.x1)),
+        });
+        segmentoAtual = [];
+      };
+
+      for (const p of porX) {
+        if (fimAnterior !== null && p.bbox.x0 - fimAnterior > GAP_LIMITE_SEGMENTO) {
+          finalizarSegmento();
+        }
+        segmentoAtual.push(p);
+        fimAnterior = p.bbox.x1;
+      }
+      finalizarSegmento();
+    }
+
+    linhas.sort((a, b) => a.y - b.y);
+    return linhas;
+  }
+
+  function linhaAbaixo(linhas, referencia, xRange) {
+    if (!referencia) return null;
+    let candidatas = linhas.filter((l) => l.y > referencia.y + 3);
+    if (xRange) {
+      candidatas = candidatas.filter((l) => l.x1 > xRange.x0 - 20 && l.x0 < xRange.x1 + 20);
+    }
+    candidatas.sort((a, b) => a.y - b.y);
+    return candidatas[0] || null;
+  }
+
+  // ---------------------------------------------------------------------
+  // Matiz (hue) de uma cor — usado tanto para classificar células
+  // (concordância/divergência/neutro) quanto para excluir fundos verdes da
+  // binarização do OCR (ver binarizarParaOCR).
+  // ---------------------------------------------------------------------
+
+  function calcularHue(r, g, b) {
+    const max = Math.max(r, g, b) / 255;
+    const min = Math.min(r, g, b) / 255;
+    const delta = max - min;
+    if (delta === 0) return null; // acromático (cinza puro) — matiz indefinido/instável
+    let hue = 0;
+    if (max === r / 255) hue = ((g - b) / 255 / delta) % 6;
+    else if (max === g / 255) hue = (b - r) / 255 / delta + 2;
+    else hue = (r - g) / 255 / delta + 4;
+    return ((hue * 60) + 360) % 360;
+  }
+
+  function classificarCor([r, g, b]) {
+    const max = Math.max(r, g, b) / 255;
+    const min = Math.min(r, g, b) / 255;
+    const delta = max - min;
+    const saturacao = max === 0 ? 0 : delta / max;
+
+    if (saturacao < 0.12) return "neutro";
+
+    const hue = calcularHue(r, g, b) ?? 0;
+    if (hue >= 70 && hue <= 170) return "concordancia";
+    if (hue <= 30 || hue >= 330) return "divergencia";
+    return "neutro";
+  }
+
+  function amostrarCorCelula(canvasCtx, xCentro, yCentro, larguraCelula, alturaCelula) {
+    const offsetX = larguraCelula * 0.32;
+    const offsetY = alturaCelula * 0.32;
+    const pontos = [
+      [xCentro - offsetX, yCentro - offsetY],
+      [xCentro + offsetX, yCentro - offsetY],
+      [xCentro - offsetX, yCentro + offsetY],
+    ];
+    let r = 0, g = 0, b = 0, n = 0;
+    for (const [x, y] of pontos) {
+      try {
+        const [pr, pg, pb] = canvasCtx.getImageData(Math.round(x), Math.round(y), 1, 1).data;
+        r += pr; g += pg; b += pb; n++;
+      } catch (e) {
+        /* fora dos limites do canvas — ignora este ponto */
+      }
+    }
+    if (n === 0) return "neutro";
+    return classificarCor([r / n, g / n, b / n]);
+  }
+
+  // ---------------------------------------------------------------------
+  // Núcleo do parser
+  // ---------------------------------------------------------------------
+
+  function interpretarPalavras(wordsRaw, dimensoesImagem, canvasCtx) {
+    const palavras = wordsRaw
+      .filter((w) => w.text && w.text.trim().length > 0)
+      .map((w) => ({ textoOriginal: w.text, bbox: w.bbox }));
+
+    const linhas = agruparEmLinhas(palavras);
+
+    const camposEncontrados = {};
+    const draft = {
+      fornecedora: "", grupo: "", data: "", hora: "",
+      totalBase: 0, concordancia: 0, divergencia: 0, neutros: 0,
+      maiorDivergencia: "", quantidadeMaiorDivergencia: 0,
+      matriz: {}, matrizNeutros: {}, totalLinhas: {}, totalColunas: {},
+    };
+    for (const l of STATUSES) for (const c of STATUSES) draft.matriz[chaveMatriz(l, c)] = 0;
+
+    // ---- cabeçalho: "Fornecedora: X" ----
+    const linhaFornecedora = linhas.find((l) => l.texto.includes("FORNECEDORA"));
+    if (linhaFornecedora) {
+      const idx = linhaFornecedora.texto.indexOf("FORNECEDORA");
+      const resto = linhaFornecedora.texto.slice(idx + "FORNECEDORA".length).replace(/^[:\s]+/, "");
+      const primeiraPalavra = resto.split(/[\s—-]/)[0];
+      if (primeiraPalavra && primeiraPalavra.length > 1) {
+        draft.fornecedora = primeiraPalavra;
+        camposEncontrados.fornecedora = true;
+      }
+    }
+
+    // ---- "ÚLTIMA ATUALIZAÇÃO" -> data + hora ----
+    const linhaAtualizacao = linhas.find((l) => l.texto.includes("ULTIMA ATUALIZACAO") || l.texto.includes("ATUALIZACAO"));
+    if (linhaAtualizacao) {
+      const xRangeAtualizacao = { x0: linhaAtualizacao.x0, x1: linhaAtualizacao.x1 };
+      const proxima = linhaAbaixo(linhas, linhaAtualizacao, xRangeAtualizacao) || linhaAtualizacao;
+      const textoBusca = linhaAtualizacao.texto + " " + (proxima ? proxima.texto : "");
+      const m = textoBusca.match(/(\d{1,2})[/-](\d{1,2})[/-](\d{2,4}).{0,6}(\d{1,2})[:h](\d{2})/);
+      if (m) {
+        let [, d, mo, y, hh, mm] = m;
+        if (y.length === 2) y = "20" + y;
+        draft.data = `${y}-${mo.padStart(2, "0")}-${d.padStart(2, "0")}`;
+        draft.hora = `${hh.padStart(2, "0")}:${mm}`;
+        camposEncontrados.data = true;
+        camposEncontrados.hora = true;
+      }
+    }
+
+    // ---- pill de "Grupo" ao lado do título ----
+    const linhaTitulo = linhas.find((l) => l.texto.includes("MATRIZ DE STATUS"));
+    if (linhaTitulo) {
+      const palavrasTitulo = ["MATRIZ", "DE", "STATUS", "FORNECEDOR", "BACKOFFICE", "X", "×"];
+      // varre da direita pra esquerda e usa a primeira palavra "de verdade"
+      // (não vazia após normalizar, não pertencente ao título) — a última
+      // palavra por posição costuma ser um ícone/seta que o OCR lê como lixo
+      // (ex.: "[<)", ">"), então pegar simplesmente a última palavra falha.
+      for (let i = linhaTitulo.palavras.length - 1; i >= 0; i--) {
+        const textoPalavra = normalizar(linhaTitulo.palavras[i].textoOriginal);
+        if (textoPalavra && textoPalavra.length > 1 && !palavrasTitulo.includes(textoPalavra)) {
+          draft.grupo = linhaTitulo.palavras[i].textoOriginal.replace(/^[^A-Za-zÀ-ú0-9]+|[^A-Za-zÀ-ú0-9]+$/g, "");
+          if (draft.grupo) camposEncontrados.grupo = true;
+          break;
+        }
+      }
+    }
+
+    // Fallback: quando o subtítulo não traz "Fornecedora: X" explicitamente
+    // (nem todo snapshot do BI tem essa frase — variação observada entre
+    // capturas), usa o texto da pill de grupo como aproximação.
+    if (!camposEncontrados.fornecedora && camposEncontrados.grupo) {
+      draft.fornecedora = draft.grupo;
+      camposEncontrados.fornecedoraPorFallback = true;
+    }
+
+    // Segundo fallback: o filtro "▽ <fornecedora>" na barra de ferramentas,
+    // identificado pela proximidade com âncoras fixas dessa barra
+    // ("INTENSIDADE" / "DESTACAR DIAGONAL"), pegando as palavras que vêm
+    // antes dessas âncoras na mesma linha e descartando ruído de 1-2 letras.
+    if (!camposEncontrados.fornecedora) {
+      const linhaFiltros = linhas.find((l) => l.texto.includes("INTENSIDADE") || l.texto.includes("DESTACAR DIAGONAL"));
+      if (linhaFiltros) {
+        const idxAncora = linhaFiltros.palavras.findIndex((p) => {
+          const t = normalizar(p.textoOriginal);
+          return t.includes("INTENSIDADE") || t.includes("DESTACAR");
+        });
+        const candidatos = (idxAncora === -1 ? linhaFiltros.palavras : linhaFiltros.palavras.slice(0, idxAncora))
+          .map((p) => p.textoOriginal.trim())
+          .filter((t) => t.replace(/[^A-Za-zÀ-ú0-9]/g, "").length > 2);
+        if (candidatos.length) {
+          draft.fornecedora = candidatos.join(" ");
+          camposEncontrados.fornecedoraPorFallback = true;
+          if (!camposEncontrados.grupo) draft.grupo = draft.fornecedora;
+        }
+      }
+    }
+
+    // ---- KPIs (cards inferiores: label -> valor -> detalhe) ----
+    function lerCardKPI(variantesLabel) {
+      const linhaLabel = linhas.find((l) => variantesLabel.some((v) => l.texto.includes(v)));
+      if (!linhaLabel) return null;
+      const xRange = { x0: linhaLabel.x0, x1: linhaLabel.x1 };
+      const linhaValor = linhaAbaixo(linhas, linhaLabel, xRange);
+      const linhaDetalhe = linhaValor ? linhaAbaixo(linhas, linhaValor, xRange) : null;
+      return { linhaLabel, linhaValor, linhaDetalhe };
+    }
+
+    const cardTotalBase = lerCardKPI(["TOTAL DA BASE"]);
+    if (cardTotalBase?.linhaValor) {
+      const n = primeiroNumero(cardTotalBase.linhaValor.texto);
+      if (n !== null) {
+        draft.totalBase = Math.round(n);
+        camposEncontrados.totalBase = true;
+      }
+    }
+
+    const cardConcordancia = lerCardKPI(["CONCORDANCIA"]);
+    if (cardConcordancia?.linhaValor) {
+      const pctMatch = primeiroNumero(cardConcordancia.linhaValor.texto);
+      if (cardConcordancia.linhaDetalhe) {
+        const m = cardConcordancia.linhaDetalhe.texto.match(/([\d.,]+)\s*NA DIAGONAL/);
+        if (m) {
+          draft.concordancia = Math.round(primeiroNumero(m[1]));
+          camposEncontrados.concordancia = true;
+        }
+      }
+      if (!camposEncontrados.concordancia && pctMatch !== null && draft.totalBase) {
+        draft.concordancia = Math.round((pctMatch / 100) * draft.totalBase);
+        camposEncontrados.concordancia = true;
+      }
+    }
+
+    // evita casar "DIVERGÊNCIA" (card isolado) com "MAIOR DIVERGÊNCIA" (outro card)
+    const linhaDivergenciaPura = linhas.find(
+      (l) => l.texto.includes("DIVERGENCIA") && !l.texto.includes("MAIOR")
+    );
+    if (linhaDivergenciaPura) {
+      const xRange = { x0: linhaDivergenciaPura.x0, x1: linhaDivergenciaPura.x1 };
+      const linhaValor = linhaAbaixo(linhas, linhaDivergenciaPura, xRange);
+      const linhaDetalhe = linhaValor ? linhaAbaixo(linhas, linhaValor, xRange) : null;
+      if (linhaDetalhe) {
+        const mForaDiagonal = linhaDetalhe.texto.match(/([\d.,]+)\s*FORA DA DIAGONAL/);
+        const mNeutros = linhaDetalhe.texto.match(/([\d.,]+)\s*NEUTROS?/);
+        if (mForaDiagonal) {
+          draft.divergencia = Math.round(primeiroNumero(mForaDiagonal[1]));
+          camposEncontrados.divergencia = true;
+        }
+        if (mNeutros) {
+          draft.neutros = Math.round(primeiroNumero(mNeutros[1]));
+          camposEncontrados.neutros = true;
+        }
+      }
+      if (!camposEncontrados.divergencia && linhaValor) {
+        const pct = primeiroNumero(linhaValor.texto);
+        if (pct !== null && draft.totalBase) {
+          draft.divergencia = Math.round((pct / 100) * draft.totalBase);
+          camposEncontrados.divergencia = true;
+        }
+      }
+    }
+
+    const cardMaiorDivergencia = lerCardKPI(["MAIOR DIVERGENCIA"]);
+    if (cardMaiorDivergencia?.linhaValor) {
+      let textoCombo = cardMaiorDivergencia.linhaValor.texto;
+      let linhaSeguinte = linhaAbaixo(linhas, cardMaiorDivergencia.linhaValor, {
+        x0: cardMaiorDivergencia.linhaLabel.x0,
+        x1: cardMaiorDivergencia.linhaLabel.x1,
+      });
+      if (linhaSeguinte && !linhaSeguinte.texto.match(/\d/) && encontrarStatusNoTexto(linhaSeguinte.texto)) {
+        textoCombo += " " + linhaSeguinte.texto;
+      }
+      const ordenados = encontrarTodosStatusEmOrdem(textoCombo);
+      if (ordenados.length >= 2) {
+        draft.maiorDivergencia = `${ordenados[0]} → ${ordenados[1]}`;
+        camposEncontrados.maiorDivergencia = true;
+      }
+      const linhaQtd = linhaSeguinte && linhaSeguinte.texto.match(/\d/)
+        ? linhaSeguinte
+        : linhaAbaixo(linhas, linhaSeguinte || cardMaiorDivergencia.linhaValor, { x0: cardMaiorDivergencia.linhaLabel.x0, x1: cardMaiorDivergencia.linhaLabel.x1 });
+      if (linhaQtd) {
+        const n = primeiroNumero(linhaQtd.texto);
+        if (n !== null) {
+          draft.quantidadeMaiorDivergencia = Math.round(n);
+          camposEncontrados.quantidadeMaiorDivergencia = true;
+        }
+      }
+    }
+
+    // ---- matriz 5x5 ----
+    // Aqui usamos as PALAVRAS diretamente (não as `linhas` já segmentadas por
+    // lacuna) porque os 5 cabeçalhos de coluna ficam espalhados por quase toda
+    // a largura da imagem — a segmentação por lacuna (boa para separar cards
+    // de KPI) os trataria como 5 blocos isolados em vez de um cabeçalho só.
+    const ocorrenciasPorStatus = new Map();
+    for (const status of STATUSES) {
+      ocorrenciasPorStatus.set(
+        status,
+        palavras.filter((p) => contemVariante(normalizar(p.textoOriginal), VARIANTES_STATUS[status]))
+      );
+    }
+
+    // Passo 1: cabeçalho de COLUNA = ocorrência mais alta (menor y) de cada status.
+    const posicaoColuna = {};
+    for (const status of STATUSES) {
+      const ocorrencias = ocorrenciasPorStatus.get(status);
+      if (!ocorrencias || ocorrencias.length === 0) continue;
+      const maisAlta = [...ocorrencias].sort((a, b) => centro(a.bbox).y - centro(b.bbox).y)[0];
+      posicaoColuna[status] = centro(maisAlta.bbox).x;
+    }
+
+    // Passo 2: cabeçalho de LINHA = a ocorrência posicionada na FAIXA À ESQUERDA
+    // da matriz (não simplesmente "a 2ª ocorrência da palavra"). Palavras curtas
+    // como "Ativo" aparecem em vários lugares da tela (card de KPI, filtro,
+    // legenda) — usar só a ordem de aparição é frágil; a posição x é um sinal
+    // mais forte, já que os cabeçalhos de linha ficam sempre bem à esquerda.
+    const xsColunaValidos = Object.values(posicaoColuna);
+    const limiteEsquerdaCabecalhoLinha = xsColunaValidos.length
+      ? Math.min(...xsColunaValidos) - (dimensoesImagem.width * 0.12)
+      : dimensoesImagem.width * 0.3;
+
+    const cabecalhoLinhaPorStatus = {};
+    for (const status of STATUSES) {
+      const ocorrencias = ocorrenciasPorStatus.get(status) || [];
+      const candidatasEsquerda = ocorrencias.filter((p) => centro(p.bbox).x < limiteEsquerdaCabecalhoLinha);
+      if (candidatasEsquerda.length) {
+        const maisAlta = candidatasEsquerda.sort((a, b) => centro(a.bbox).y - centro(b.bbox).y)[0];
+        cabecalhoLinhaPorStatus[status] = { y: centro(maisAlta.bbox).y };
+      }
+    }
+
+    const statusComColuna = STATUSES.filter((s) => posicaoColuna[s] !== undefined);
+    const statusComLinha = STATUSES.filter((s) => cabecalhoLinhaPorStatus[s]);
+    const linhaCabecalhoColunaY = statusComColuna.length
+      ? Math.min(...statusComColuna.map((s) => {
+          const oc = ocorrenciasPorStatus.get(s)[0];
+          return centro(oc.bbox).y;
+        }))
+      : 0;
+
+    let celulasEncontradas = 0;
+    let larguraCelulaEstimada = 100;
+    let alturaCelulaEstimada = 60;
+
+    if (statusComColuna.length >= 3 && statusComLinha.length >= 3) {
+      const xsColunas = statusComColuna.map((s) => posicaoColuna[s]).sort((a, b) => a - b);
+      if (xsColunas.length > 1) {
+        larguraCelulaEstimada = (xsColunas[xsColunas.length - 1] - xsColunas[0]) / (xsColunas.length - 1);
+      }
+      const ysLinhas = statusComLinha.map((s) => cabecalhoLinhaPorStatus[s].y).sort((a, b) => a - b);
+      if (ysLinhas.length > 1) {
+        alturaCelulaEstimada = (ysLinhas[ysLinhas.length - 1] - ysLinhas[0]) / (ysLinhas.length - 1);
+      }
+
+      const numerosDaMatriz = [];
+      for (const linha of linhas) {
+        if (linha.y <= linhaCabecalhoColunaY) continue;
+        for (const p of linha.palavras) {
+          const n = extrairNumero(p.textoOriginal);
+          if (n && !n.ehPercentual) numerosDaMatriz.push({ ...p, centro: centro(p.bbox), numero: n });
+        }
+      }
+
+      // raio de casamento: baseado no TAMANHO REAL da célula (não numa fração
+      // fixa do tamanho da imagem) — evita que a célula "roube" o número de
+      // uma linha vizinha ou da linha de totais quando o valor real (muitas
+      // vezes um "0" apagado/de baixo contraste) não foi lido pelo OCR. Nesse
+      // caso é preferível ficar em branco (0) do que pegar um número errado.
+      const toleranciaX = larguraCelulaEstimada * 0.42;
+      const toleranciaY = alturaCelulaEstimada * 0.42;
+
+      for (const rLinha of statusComLinha) {
+        for (const rColuna of statusComColuna) {
+          const alvo = { x: posicaoColuna[rColuna], y: cabecalhoLinhaPorStatus[rLinha].y };
+          let melhor = null, melhorDistNormalizada = Infinity;
+          for (const n of numerosDaMatriz) {
+            const dx = (n.centro.x - alvo.x) / toleranciaX;
+            const dy = (n.centro.y - alvo.y) / toleranciaY;
+            const dNormalizada = Math.hypot(dx, dy); // elipse de tolerância, não círculo
+            if (dNormalizada < melhorDistNormalizada) { melhorDistNormalizada = dNormalizada; melhor = n; }
+          }
+          const chave = chaveMatriz(rLinha, rColuna);
+          if (melhor && melhorDistNormalizada < 1) {
+            draft.matriz[chave] = Math.round(melhor.numero.valor);
+            celulasEncontradas++;
+
+            if (canvasCtx) {
+              const categoria = amostrarCorCelula(canvasCtx, alvo.x, alvo.y, larguraCelulaEstimada, alturaCelulaEstimada);
+              if (categoria === "neutro" && rLinha !== rColuna) {
+                draft.matrizNeutros[chave] = true;
+              }
+            }
+          }
+        }
+      }
+    }
+
+    for (const l of STATUSES) {
+      draft.totalLinhas[l] = STATUSES.reduce((acc, c) => acc + (draft.matriz[chaveMatriz(l, c)] || 0), 0);
+    }
+    for (const c of STATUSES) {
+      draft.totalColunas[c] = STATUSES.reduce((acc, l) => acc + (draft.matriz[chaveMatriz(l, c)] || 0), 0);
+    }
+
+    const somaMatriz = Object.values(draft.matriz).reduce((a, b) => a + b, 0);
+    if (!camposEncontrados.totalBase && somaMatriz > 0) draft.totalBase = somaMatriz;
+
+    if (!camposEncontrados.concordancia) {
+      draft.concordancia = STATUSES.reduce((acc, s) => acc + (draft.matriz[chaveMatriz(s, s)] || 0), 0);
+    }
+    if (!camposEncontrados.divergencia) {
+      draft.divergencia = Math.max(0, draft.totalBase - draft.concordancia - draft.neutros);
+    }
+    if (!camposEncontrados.maiorDivergencia) {
+      let maiorChave = null, maiorValor = -1;
+      for (const l of STATUSES) {
+        for (const c of STATUSES) {
+          if (l === c) continue;
+          const v = draft.matriz[chaveMatriz(l, c)] || 0;
+          if (v > maiorValor) { maiorValor = v; maiorChave = { l, c }; }
+        }
+      }
+      if (maiorChave) {
+        draft.maiorDivergencia = `${maiorChave.l} → ${maiorChave.c}`;
+        draft.quantidadeMaiorDivergencia = maiorValor;
+      }
+    }
+
+    const camposChave = ["totalBase", "concordancia", "divergencia", "fornecedora", "data"];
+    const kpisEncontrados = camposChave.filter((k) => camposEncontrados[k]).length;
+    const totalEsperado = camposChave.length + 25;
+    const confianca = Math.round(((kpisEncontrados + celulasEncontradas) / totalEsperado) * 100);
+
+    // Geometria da matriz encontrada nesta passada — exposta para que uma
+    // segunda passada de OCR (focada só na região da matriz, com melhor
+    // ampliação e restrita a dígitos) possa substituir os valores numéricos
+    // por leituras mais precisas, sem precisar redescobrir a grade do zero.
+    const matrizGeometria =
+      statusComColuna.length >= 3 && statusComLinha.length >= 3
+        ? {
+            posicaoColuna,
+            cabecalhoLinhaPorStatus,
+            larguraCelulaEstimada,
+            alturaCelulaEstimada,
+            linhaCabecalhoColunaY,
+            statusComColuna,
+            statusComLinha,
+          }
+        : null;
+
+    return {
+      draft,
+      confianca,
+      camposEncontrados,
+      celulasMatrizEncontradas: celulasEncontradas,
+      avisoBaixaConfianca: confianca < 70,
+      matrizGeometria,
+    };
+  }
+
+  /**
+   * Refaz o casamento de células da matriz usando uma nova lista de números
+   * candidatos (tipicamente vindos de uma segunda passada de OCR, focada e
+   * ampliada só na região da matriz) em vez dos números da passada original.
+   * Usa a mesma geometria (posições de linha/coluna) já descoberta — não
+   * precisa re-detectar cabeçalhos.
+   */
+  function reextrairCelulasComCandidatos(matrizGeometria, candidatosNumeros, canvasCtx) {
+    const { posicaoColuna, cabecalhoLinhaPorStatus, larguraCelulaEstimada, alturaCelulaEstimada, statusComColuna, statusComLinha } =
+      matrizGeometria;
+
+    const toleranciaX = larguraCelulaEstimada * 0.42;
+    const toleranciaY = alturaCelulaEstimada * 0.42;
+
+    const matriz = {};
+    const matrizNeutros = {};
+    let celulasEncontradas = 0;
+
+    for (const rLinha of statusComLinha) {
+      for (const rColuna of statusComColuna) {
+        const alvo = { x: posicaoColuna[rColuna], y: cabecalhoLinhaPorStatus[rLinha].y };
+        let melhor = null, melhorDistNormalizada = Infinity;
+        for (const n of candidatosNumeros) {
+          const dx = (n.centro.x - alvo.x) / toleranciaX;
+          const dy = (n.centro.y - alvo.y) / toleranciaY;
+          const dNormalizada = Math.hypot(dx, dy);
+          if (dNormalizada < melhorDistNormalizada) { melhorDistNormalizada = dNormalizada; melhor = n; }
+        }
+        const chave = chaveMatriz(rLinha, rColuna);
+        if (melhor && melhorDistNormalizada < 1) {
+          matriz[chave] = Math.round(melhor.numero.valor);
+          celulasEncontradas++;
+          if (canvasCtx) {
+            const categoria = amostrarCorCelula(canvasCtx, alvo.x, alvo.y, larguraCelulaEstimada, alturaCelulaEstimada);
+            if (categoria === "neutro" && rLinha !== rColuna) matrizNeutros[chave] = true;
+          }
+        }
+      }
+    }
+    return { matriz, matrizNeutros, celulasEncontradas };
+  }
+
+  // ---- ponto de entrada público -------------------------------------------------
+
+  const ESCALA_PASSADA1 = 2; // amplia a imagem inteira 2x — texto pequeno é o principal problema do Tesseract
+  const ESCALA_PASSADA2 = 3; // na 2ª passada, só a região da matriz já recortada — pode ampliar mais ainda
+
+  async function lerPrintDoBI(arquivoImagem, aoAtualizarProgresso) {
+    if (typeof Tesseract === "undefined") {
+      throw new Error(
+        "Biblioteca de OCR (Tesseract.js) não carregou. Verifique sua conexão com a internet " +
+          "— o app carrega essa biblioteca por CDN e precisa de acesso a ela na primeira leitura."
+      );
+    }
+
+    const { dimensoes, canvasOriginal, canvasCtx, canvasBinarizadoAmpliado } = await carregarImagemNoCanvas(arquivoImagem);
+
+    function reportarProgresso(fracaoInicio, fracaoFim) {
+      return (m) => {
+        if (aoAtualizarProgresso && m.status === "recognizing text") {
+          const pct = fracaoInicio + (fracaoFim - fracaoInicio) * m.progress;
+          aoAtualizarProgresso(Math.round(pct * 100));
+        }
+      };
+    }
+
+    // O logger é fixado na criação do worker (API do Tesseract.js), mas
+    // precisamos de faixas de progresso diferentes para a 1ª e a 2ª passada
+    // — por isso ele chama uma referência mutável, reatribuída entre as
+    // passadas, em vez de tentar troca-lo depois de criado.
+    let loggerAtivo = reportarProgresso(0, 0.55);
+    const worker = await Tesseract.createWorker("por", 1, {
+      logger: (m) => loggerAtivo(m),
+    });
+
+    // ---- Passada 1: imagem inteira, modo "texto esparso" ----
+    // O Tesseract, no modo padrão, tenta detectar parágrafos como um
+    // documento — uma tela de dashboard com números espalhados em caixas
+    // confunde esse modo. SPARSE_TEXT foi feito para textos avulsos sem
+    // estrutura de parágrafo, que é exatamente o caso aqui.
+    await worker.setParameters({ tessedit_pageseg_mode: Tesseract.PSM.SPARSE_TEXT });
+    const resultado1 = await worker.recognize(canvasBinarizadoAmpliado || arquivoImagem);
+
+    // Palavras da passada 1, com as coordenadas já convertidas de volta para
+    // a escala da imagem ORIGINAL (a passada rodou numa versão ampliada).
+    const wordsPassada1 = (resultado1.data.words || []).map((w) => ({
+      text: w.text,
+      bbox: {
+        x0: w.bbox.x0 / ESCALA_PASSADA1, y0: w.bbox.y0 / ESCALA_PASSADA1,
+        x1: w.bbox.x1 / ESCALA_PASSADA1, y1: w.bbox.y1 / ESCALA_PASSADA1,
+      },
+    }));
+
+    const interpretado = interpretarPalavras(wordsPassada1, dimensoes, canvasCtx);
+
+    // ---- Passada 2 (opcional): recorta só a região da matriz já localizada
+    // na passada 1, amplia mais ainda, restringe o reconhecimento a dígitos
+    // e roda o OCR de novo SÓ nessa região. Números pequenos em fundo
+    // colorido são o ponto mais frágil da passada 1; isolar a região e
+    // remover a concorrência de letras/símbolos ajuda bastante o Tesseract.
+    if (interpretado.matrizGeometria && canvasOriginal) {
+      try {
+        const geo = interpretado.matrizGeometria;
+        const margemX = geo.larguraCelulaEstimada * 0.55;
+        const margemY = geo.alturaCelulaEstimada * 0.55;
+        const xs = geo.statusComColuna.map((s) => geo.posicaoColuna[s]);
+        const ys = geo.statusComLinha.map((s) => geo.cabecalhoLinhaPorStatus[s].y);
+        const caixa = {
+          x0: Math.max(0, Math.min(...xs) - margemX),
+          x1: Math.min(dimensoes.width, Math.max(...xs) + margemX),
+          y0: Math.max(0, Math.min(...ys) - margemY),
+          y1: Math.min(dimensoes.height, Math.max(...ys) + margemY),
+        };
+
+        const canvasRecorte = recortarEAmpliar(canvasOriginal, caixa, ESCALA_PASSADA2);
+        const canvasRecorteBinarizado = binarizarParaOCR(canvasRecorte);
+
+        await worker.setParameters({
+          tessedit_pageseg_mode: Tesseract.PSM.SPARSE_TEXT,
+          tessedit_char_whitelist: "0123456789.,",
+        });
+        loggerAtivo = reportarProgresso(0.55, 0.95);
+        const resultado2 = await worker.recognize(canvasRecorteBinarizado);
+
+        const candidatosPassada2 = (resultado2.data.words || [])
+          .filter((w) => w.text && w.text.trim().length > 0)
+          .map((w) => {
+            const n = extrairNumero(w.text);
+            if (!n || n.ehPercentual) return null;
+            const bboxOriginal = {
+              x0: caixa.x0 + w.bbox.x0 / ESCALA_PASSADA2, y0: caixa.y0 + w.bbox.y0 / ESCALA_PASSADA2,
+              x1: caixa.x0 + w.bbox.x1 / ESCALA_PASSADA2, y1: caixa.y0 + w.bbox.y1 / ESCALA_PASSADA2,
+            };
+            return { centro: centro(bboxOriginal), numero: n };
+          })
+          .filter(Boolean);
+
+        // só substitui se a 2ª passada realmente achou uma quantidade
+        // razoável de números — caso contrário mantém o resultado da 1ª
+        // passada, que pelo menos tem alguma chance de estar certo.
+        if (candidatosPassada2.length >= 10) {
+          const reextraido = reextrairCelulasComCandidatos(geo, candidatosPassada2, canvasCtx);
+          if (reextraido.celulasEncontradas >= interpretado.celulasMatrizEncontradas) {
+            interpretado.draft.matriz = reextraido.matriz;
+            interpretado.draft.matrizNeutros = reextraido.matrizNeutros;
+            interpretado.celulasMatrizEncontradas = reextraido.celulasEncontradas;
+            interpretado.usouSegundaPassada = true;
+
+            // recalcula totais que dependem da matriz
+            for (const l of STATUSES) {
+              interpretado.draft.totalLinhas[l] = STATUSES.reduce(
+                (acc, c) => acc + (interpretado.draft.matriz[chaveMatriz(l, c)] || 0), 0
+              );
+            }
+            for (const c of STATUSES) {
+              interpretado.draft.totalColunas[c] = STATUSES.reduce(
+                (acc, l) => acc + (interpretado.draft.matriz[chaveMatriz(l, c)] || 0), 0
+              );
+            }
+            const somaMatriz = Object.values(interpretado.draft.matriz).reduce((a, b) => a + b, 0);
+            if (!interpretado.camposEncontrados.totalBase && somaMatriz > 0) {
+              interpretado.draft.totalBase = somaMatriz;
+            }
+            if (!interpretado.camposEncontrados.concordancia) {
+              interpretado.draft.concordancia = STATUSES.reduce(
+                (acc, s) => acc + (interpretado.draft.matriz[chaveMatriz(s, s)] || 0), 0
+              );
+            }
+            if (!interpretado.camposEncontrados.divergencia) {
+              interpretado.draft.divergencia = Math.max(
+                0, interpretado.draft.totalBase - interpretado.draft.concordancia - interpretado.draft.neutros
+              );
+            }
+            const camposChave = ["totalBase", "concordancia", "divergencia", "fornecedora", "data"];
+            const kpisEncontrados = camposChave.filter((k) => interpretado.camposEncontrados[k]).length;
+            interpretado.confianca = Math.round(
+              ((kpisEncontrados + interpretado.celulasMatrizEncontradas) / (camposChave.length + 25)) * 100
+            );
+            interpretado.avisoBaixaConfianca = interpretado.confianca < 70;
+          }
+        }
+      } catch (e) {
+        console.warn("2ª passada de OCR (matriz) falhou, mantendo resultado da 1ª passada:", e);
+      }
+    }
+
+    await worker.terminate();
+
+    const linhasDebug = agruparEmLinhas(
+      wordsPassada1
+        .filter((w) => w.text && w.text.trim().length > 0)
+        .map((w) => ({ textoOriginal: w.text, bbox: w.bbox }))
+    ).map((l) => ({ texto: l.texto, x0: Math.round(l.x0), x1: Math.round(l.x1), y: Math.round(l.y) }));
+
+    return Object.assign(
+      { textoCompletoOCR: resultado1.data.text, linhasDebug },
+      interpretado
+    );
+  }
+
+  /**
+   * Converte a imagem para preto-no-branco antes do OCR. Usa TRÊS condições
+   * (não só brilho): o pixel só vira "texto" (preto) se for CLARO, POUCO
+   * SATURADO (próximo de branco/cinza), e — condição extra — NÃO tiver matiz
+   * verde. Fundos verdes pastel/claros (usados nas células de concordância)
+   * podem ter saturação baixa o suficiente para escapar do limiar de croma
+   * e serem confundidos com texto; quando isso acontece, a célula inteira
+   * vira um bloco preto sólido que apaga o número real que estava nela —
+   * foi exatamente esse o bug: todas as 5 células da diagonal (verdes) saíam
+   * sem nenhum texto reconhecido, enquanto as fora da diagonal liam bem.
+   * Testado e confirmado com prints reais.
+   */
+  function binarizarParaOCR(canvasOriginal) {
+    const w = canvasOriginal.width;
+    const h = canvasOriginal.height;
+    const ctxOrig = canvasOriginal.getContext("2d", { willReadFrequently: true });
+    const dados = ctxOrig.getImageData(0, 0, w, h);
+    const px = dados.data;
+
+    const LIMIAR_LUMINANCIA = 120;
+    const LIMIAR_CROMA = 38;
+    const CROMA_MINIMO_PARA_CHECAR_MATIZ = 25; // abaixo disso o matiz é instável/sem sentido (quase cinza puro) ou é só um leve vazamento de cor no texto (compressão de imagem) — não fundo de verdade
+
+    for (let i = 0; i < px.length; i += 4) {
+      const r = px[i], g = px[i + 1], b = px[i + 2];
+      const luminancia = 0.299 * r + 0.587 * g + 0.114 * b;
+      const croma = Math.max(r, g, b) - Math.min(r, g, b);
+
+      let ehTexto = luminancia > LIMIAR_LUMINANCIA && croma < LIMIAR_CROMA;
+      if (ehTexto && croma > CROMA_MINIMO_PARA_CHECAR_MATIZ) {
+        const hue = calcularHue(r, g, b);
+        if (hue !== null && hue >= 60 && hue <= 180) ehTexto = false; // matiz verde -> é fundo, não texto
+      }
+
+      const valor = ehTexto ? 0 : 255;
+      px[i] = px[i + 1] = px[i + 2] = valor;
+      px[i + 3] = 255;
+    }
+
+    const canvasNovo = document.createElement("canvas");
+    canvasNovo.width = w;
+    canvasNovo.height = h;
+    canvasNovo.getContext("2d").putImageData(dados, 0, 0);
+    return canvasNovo;
+  }
+
+  /** Recorta um retângulo (em coordenadas da imagem original) e desenha ampliado num canvas novo. */
+  function recortarEAmpliar(canvasOriginal, caixa, escala) {
+    const larguraOrig = Math.max(1, Math.round(caixa.x1 - caixa.x0));
+    const alturaOrig = Math.max(1, Math.round(caixa.y1 - caixa.y0));
+    const canvasNovo = document.createElement("canvas");
+    canvasNovo.width = larguraOrig * escala;
+    canvasNovo.height = alturaOrig * escala;
+    const ctx = canvasNovo.getContext("2d");
+    ctx.imageSmoothingEnabled = false; // preserva bordas nítidas ao ampliar (melhor para binarização/OCR)
+    ctx.drawImage(
+      canvasOriginal,
+      caixa.x0, caixa.y0, larguraOrig, alturaOrig,
+      0, 0, canvasNovo.width, canvasNovo.height
+    );
+    return canvasNovo;
+  }
+
+  /** Amplia o canvas inteiro por um fator, sem suavização (mantém bordas de texto nítidas). */
+  function ampliarCanvas(canvasOriginal, escala) {
+    const canvasNovo = document.createElement("canvas");
+    canvasNovo.width = canvasOriginal.width * escala;
+    canvasNovo.height = canvasOriginal.height * escala;
+    const ctx = canvasNovo.getContext("2d");
+    ctx.imageSmoothingEnabled = false;
+    ctx.drawImage(canvasOriginal, 0, 0, canvasNovo.width, canvasNovo.height);
+    return canvasNovo;
+  }
+
+  function carregarImagemNoCanvas(arquivo) {
+    return new Promise((resolve) => {
+      const img = new Image();
+      const url = URL.createObjectURL(arquivo);
+      img.onload = () => {
+        let canvasOriginal = null;
+        let canvasCtx = null;
+        let canvasBinarizadoAmpliado = null;
+        try {
+          canvasOriginal = document.createElement("canvas");
+          canvasOriginal.width = img.width;
+          canvasOriginal.height = img.height;
+          canvasCtx = canvasOriginal.getContext("2d", { willReadFrequently: true });
+          canvasCtx.drawImage(img, 0, 0);
+
+          const ampliado = ampliarCanvas(canvasOriginal, ESCALA_PASSADA1);
+          canvasBinarizadoAmpliado = binarizarParaOCR(ampliado);
+        } catch (e) {
+          canvasOriginal = null;
+          canvasCtx = null;
+          canvasBinarizadoAmpliado = null;
+        }
+        resolve({
+          dimensoes: { width: img.width, height: img.height },
+          canvasOriginal,
+          canvasCtx,
+          canvasBinarizadoAmpliado,
+        });
+        URL.revokeObjectURL(url);
+      };
+      img.onerror = () =>
+        resolve({ dimensoes: { width: 1000, height: 1000 }, canvasOriginal: null, canvasCtx: null, canvasBinarizadoAmpliado: null });
+      img.src = url;
+    });
+  }
+
+  global.INDEXApp = global.INDEXApp || {};
+  global.INDEXApp.OCR = {
+    lerPrintDoBI,
+    interpretarPalavras,
+    reextrairCelulasComCandidatos,
+    extrairNumero,
+  };
+})(window);
+
+
+/* ===== dashboard.js ===== */
+/**
+ * dashboard.js
+ * ---------------------------------------------------------------------------
+ * Camada de apresentação: recebe dados já calculados (comparison.js) e
+ * desenha cada seção do app. Nenhuma função aqui lê armazenamento ou faz
+ * OCR diretamente — tudo chega pronto via parâmetros, o que mantém este
+ * arquivo fácil de testar e de adaptar caso o layout mude.
+ * ---------------------------------------------------------------------------
+ */
+(function (global) {
+  "use strict";
+
+  const Config = global.INDEXApp.Config;
+  const Comparison = global.INDEXApp.Comparison;
+  const { STATUSES } = Config;
+
+  const graficos = {}; // instâncias Chart.js vivas, por id de canvas (para destruir antes de redesenhar)
+
+  // ---------------------------------------------------------------------
+  // Helpers de formatação
+  // ---------------------------------------------------------------------
+
+  function fmtNum(n) {
+    if (n === null || n === undefined || Number.isNaN(n)) return "—";
+    return Math.round(n).toLocaleString("pt-BR");
+  }
+  function fmtPct(fracao, casas = 1) {
+    if (fracao === null || fracao === undefined || Number.isNaN(fracao)) return "—";
+    return (fracao * 100).toFixed(casas).replace(".", ",") + "%";
+  }
+  function fmtPP(fracao, comSinal = true) {
+    if (fracao === null || fracao === undefined || Number.isNaN(fracao)) return "—";
+    const valor = (fracao * 100).toFixed(2).replace(".", ",");
+    const sinal = comSinal && fracao > 0 ? "+" : "";
+    return `${sinal}${valor} p.p.`;
+  }
+  function fmtDataBR(isoDate) {
+    if (!isoDate) return "—";
+    const [y, m, d] = isoDate.split("-");
+    return `${d}/${m}/${y}`;
+  }
+  function corTendencia(valor) {
+    if (valor > 0) return "positivo";
+    if (valor < 0) return "negativo";
+    return "neutro";
+  }
+
+  function getCSSVar(nome) {
+    return getComputedStyle(document.documentElement).getPropertyValue(nome).trim();
+  }
+
+  // ---------------------------------------------------------------------
+  // 1. INÍCIO — KPI cards
+  // ---------------------------------------------------------------------
+
+  function renderKPIsInicio(historico) {
+    const container = document.getElementById("kpi-grid-inicio");
+    if (!container) return;
+
+    const { hoje, ontem } = Comparison.obterHojeOntemGlobal(historico);
+    if (!hoje) {
+      container.innerHTML = `<div class="card" style="grid-column: 1 / -1; text-align:center; color: var(--text-muted);">
+        Nenhum snapshot registrado ainda. Vá até <strong>SNAPSHOTS</strong> para enviar o primeiro print do BI.
+      </div>`;
+      return;
+    }
+
+    const cmp = ontem ? Comparison.compararSnapshots(hoje, ontem) : null;
+    const ranking = Comparison.calcularRanking(historico);
+    const comComparativo = ranking.filter((r) => r.deltaPP !== null);
+    const melhor = comComparativo[0];
+    const pior = comComparativo[comComparativo.length - 1];
+
+    // maior divergência global atual (fora da diagonal)
+    const maiorDivGlobal = Object.entries(hoje.matriz)
+      .filter(([chave]) => chave.split("|")[0] !== chave.split("|")[1])
+      .sort((a, b) => b[1] - a[1])[0];
+    const maiorDivLabel = maiorDivGlobal ? maiorDivGlobal[0].split("|").join(" → ") : "—";
+    const maiorDivQtd = maiorDivGlobal ? maiorDivGlobal[1] : 0;
+
+    const cards = [
+      {
+        icone: "👥", label: "TOTAL DA BASE", accent: "var(--azul-destaque)",
+        valor: fmtNum(hoje.totalBase),
+        sub: cmp ? `${cmp.deltaTotalBase >= 0 ? "+" : ""}${fmtNum(cmp.deltaTotalBase)} vs. ontem` : "sem comparativo",
+        subClasse: cmp ? corTendencia(cmp.deltaTotalBase) : "neutro",
+      },
+      {
+        icone: "🟢", label: "CONCORDÂNCIA", accent: "var(--verde-igreen)",
+        valor: fmtPct(hoje.concordanciaPct),
+        sub: cmp ? fmtPP(cmp.deltaConcordanciaPP) + " vs. ontem" : "sem comparativo",
+        subClasse: cmp ? corTendencia(cmp.deltaConcordanciaPP) : "neutro",
+      },
+      {
+        icone: "🔴", label: "DIVERGÊNCIA", accent: "var(--vermelho)",
+        valor: fmtPct(hoje.divergenciaPct),
+        sub: cmp ? fmtPP(cmp.deltaDivergenciaPP) + " vs. ontem" : "sem comparativo",
+        subClasse: cmp ? corTendencia(-cmp.deltaDivergenciaPP) : "neutro",
+      },
+      {
+        icone: "🔄", label: "MOVIMENTAÇÕES", accent: "var(--amarelo)",
+        valor: cmp ? fmtNum(cmp.clientesMovimentados) : "—",
+        sub: "clientes com alteração de status desde ontem*",
+        subClasse: "neutro",
+      },
+      {
+        icone: "⏸️", label: "SEM ALTERAÇÃO", accent: "var(--cinza-neutro)",
+        valor: cmp ? fmtNum(cmp.clientesSemAlteracao) : "—",
+        sub: "clientes estáveis desde ontem*",
+        subClasse: "neutro",
+      },
+      {
+        icone: "🏆", label: "MELHOR FORNECEDORA", accent: "var(--verde-igreen)",
+        valor: melhor ? melhor.fornecedora : "—",
+        sub: melhor ? fmtPP(melhor.deltaPP) : "sem comparativo",
+        subClasse: melhor ? "positivo" : "neutro",
+      },
+      {
+        icone: "⚠️", label: "PIOR FORNECEDORA", accent: "var(--vermelho)",
+        valor: pior && pior.deltaPP < 0 ? pior.fornecedora : "—",
+        sub: pior && pior.deltaPP < 0 ? fmtPP(pior.deltaPP) : "nenhuma piora no período",
+        subClasse: pior && pior.deltaPP < 0 ? "negativo" : "neutro",
+      },
+      {
+        icone: "🔥", label: "MAIOR DIVERGÊNCIA", accent: "var(--vermelho)",
+        valor: fmtNum(maiorDivQtd) + " clientes",
+        sub: maiorDivLabel,
+        subClasse: "neutro",
+      },
+    ];
+
+    container.innerHTML = cards
+      .map(
+        (c) => `
+      <div class="kpi-card" style="--kpi-accent:${c.accent}">
+        <span class="kpi-icone">${c.icone}</span>
+        <div class="kpi-label">${c.label}</div>
+        <div class="kpi-valor">${c.valor}</div>
+        <div class="kpi-sub ${c.subClasse}">${c.sub}</div>
+      </div>`
+      )
+      .join("");
+
+let nota = document.getElementById("nota-kpis-inicio");
+    if (!nota) {
+      nota = document.createElement("p");
+      nota.id = "nota-kpis-inicio";
+      nota.style.cssText = "font-size:11px;color:var(--text-muted);margin:-8px 0 20px;";
+      container.parentNode.insertBefore(nota, container.nextSibling);
+    }
+    nota.textContent = "*Estimativa agregada a partir da variação das 25 combinações da matriz entre os dois snapshots mais recentes.";
+  }
+
+  // ---------------------------------------------------------------------
+  // Índice de Evolução
+  // ---------------------------------------------------------------------
+
+  function renderIndiceEvolucao(historico) {
+    const container = document.getElementById("indice-evolucao-corpo");
+    if (!container) return;
+
+    const resultado = Comparison.calcularIndiceEvolucao(historico);
+    if (resultado.pontuacao === null) {
+      container.innerHTML = `<p style="color:var(--text-muted); font-size:13px;">
+        São necessários pelo menos dois dias de snapshots para calcular o índice.</p>`;
+      return;
+    }
+
+    const cor =
+      resultado.pontuacao >= 70 ? "var(--verde-claro)" :
+      resultado.pontuacao >= 50 ? "var(--amarelo)" :
+      resultado.pontuacao >= 30 ? "#FB923C" : "var(--vermelho)";
+
+    container.innerHTML = `
+      <div class="indice-topo">
+        <div class="indice-pontuacao" style="color:${cor}">${resultado.pontuacao}</div>
+        <div>
+          <div class="indice-classificacao" style="background:${cor}22; color:${cor};">
+            ${resultado.classificacao.icone} ${resultado.classificacao.texto}
+          </div>
+          <p style="margin:6px 0 0; font-size:11.5px; color:var(--text-muted);">de 0 a 100 pontos</p>
+        </div>
+      </div>
+      <div class="indice-fatores">
+        ${resultado.fatores
+          .map(
+            (f) => `
+          <div class="indice-fator">
+            <span class="nome-fator">${f.nome} <span style="color:var(--text-muted)">(peso ${f.peso})</span></span>
+            <span class="indice-barra-bg"><span class="indice-barra-fill" style="width:${f.nota}%; background:${f.nota >= 50 ? "var(--verde-claro)" : "var(--vermelho)"}"></span></span>
+            <span class="nota-fator">${Math.round(f.nota)}</span>
+          </div>`
+          )
+          .join("")}
+      </div>`;
+  }
+
+  // ---------------------------------------------------------------------
+  // 3/5. SNAPSHOTS — formulário de matriz + histórico
+  // ---------------------------------------------------------------------
+
+  /** Gera a tabela HTML de inputs 5x5 usada na tela de conferência do OCR. */
+  function montarTabelaMatrizFormulario() {
+    const tabela = document.getElementById("tabela-matriz-form");
+    if (!tabela) return;
+
+    let html = "<thead><tr><th>Fornec. ↓ / BO →</th>";
+    for (const col of STATUSES) html += `<th>${col}</th>`;
+    html += "<th>Total</th></tr></thead><tbody>";
+
+    for (const linha of STATUSES) {
+      html += `<tr><td class="rotulo-linha">${linha}</td>`;
+      for (const coluna of STATUSES) {
+        const chave = Config.chaveMatriz(linha, coluna);
+        const diagonal = linha === coluna ? " celula-diagonal" : "";
+        html += `<td class="${diagonal}">
+          <input type="number" min="0" data-chave-matriz="${chave}" value="0" />
+          ${linha === coluna ? "" : `<label class="check-neutro" title="Marcar como neutro (fora do cálculo)">
+            <input type="checkbox" data-neutro-matriz="${chave}" /> N
+          </label>`}
+        </td>`;
+      }
+      html += `<td class="rotulo-linha" data-total-linha="${linha}">0</td>`;
+      html += "</tr>";
+    }
+    html += `<tr><td class="rotulo-linha">Total</td>`;
+    for (const coluna of STATUSES) html += `<td class="rotulo-linha" data-total-coluna="${coluna}">0</td>`;
+    html += `<td class="rotulo-linha" data-total-geral>0</td></tr>`;
+    html += "</tbody>";
+    tabela.innerHTML = html;
+
+    tabela.addEventListener("input", atualizarTotaisFormularioMatriz);
+    atualizarTotaisFormularioMatriz();
+  }
+
+  function atualizarTotaisFormularioMatriz() {
+    const tabela = document.getElementById("tabela-matriz-form");
+    if (!tabela) return;
+    let totalGeral = 0;
+    for (const linha of STATUSES) {
+      let totalLinha = 0;
+      for (const coluna of STATUSES) {
+        const input = tabela.querySelector(`input[data-chave-matriz="${Config.chaveMatriz(linha, coluna)}"]`);
+        totalLinha += parseInt(input?.value || "0", 10) || 0;
+      }
+      const celulaTotal = tabela.querySelector(`[data-total-linha="${linha}"]`);
+      if (celulaTotal) celulaTotal.textContent = totalLinha.toLocaleString("pt-BR");
+      totalGeral += totalLinha;
+    }
+    for (const coluna of STATUSES) {
+      let totalColuna = 0;
+      for (const linha of STATUSES) {
+        const input = tabela.querySelector(`input[data-chave-matriz="${Config.chaveMatriz(linha, coluna)}"]`);
+        totalColuna += parseInt(input?.value || "0", 10) || 0;
+      }
+      const celulaTotal = tabela.querySelector(`[data-total-coluna="${coluna}"]`);
+      if (celulaTotal) celulaTotal.textContent = totalColuna.toLocaleString("pt-BR");
+    }
+    const celulaGeral = tabela.querySelector("[data-total-geral]");
+    if (celulaGeral) celulaGeral.textContent = totalGeral.toLocaleString("pt-BR");
+
+    // reflete no campo "Total da base" do formulário, se existir e não tiver sido editado manualmente
+    const campoTotalBase = document.getElementById("campo-total-base");
+    if (campoTotalBase && campoTotalBase.dataset.autoPreenchido !== "false") {
+      campoTotalBase.value = totalGeral;
+      campoTotalBase.dataset.autoPreenchido = "true";
+    }
+  }
+
+  /** Preenche o formulário de conferência com os dados extraídos pelo OCR (ou zerados, para digitação manual). */
+  function preencherFormularioComDraft(draft) {
+    document.getElementById("campo-data").value = draft.data || new Date().toISOString().slice(0, 10);
+    document.getElementById("campo-hora").value = draft.hora || new Date().toTimeString().slice(0, 5);
+    document.getElementById("campo-fornecedora").value = draft.fornecedora || "";
+    document.getElementById("campo-grupo").value = draft.grupo || "";
+    document.getElementById("campo-total-base").value = draft.totalBase || 0;
+    document.getElementById("campo-total-base").dataset.autoPreenchido = "true";
+    document.getElementById("campo-concordancia").value = draft.concordancia || 0;
+    document.getElementById("campo-divergencia").value = draft.divergencia || 0;
+    document.getElementById("campo-neutros").value = draft.neutros || 0;
+    document.getElementById("campo-maior-divergencia").value = draft.maiorDivergencia || "";
+    document.getElementById("campo-qtd-maior-divergencia").value = draft.quantidadeMaiorDivergencia || 0;
+
+    const tabela = document.getElementById("tabela-matriz-form");
+    for (const linha of STATUSES) {
+      for (const coluna of STATUSES) {
+        const chave = Config.chaveMatriz(linha, coluna);
+        const input = tabela.querySelector(`input[data-chave-matriz="${chave}"]`);
+        if (input) input.value = (draft.matriz && draft.matriz[chave]) || 0;
+        const checkbox = tabela.querySelector(`input[data-neutro-matriz="${chave}"]`);
+        if (checkbox) checkbox.checked = !!(draft.matrizNeutros && draft.matrizNeutros[chave]);
+      }
+    }
+    atualizarTotaisFormularioMatriz();
+  }
+
+  /** Lê os valores atuais do formulário de conferência (usado ao confirmar o snapshot). */
+  function lerFormularioSnapshot() {
+    const matriz = {};
+    const matrizNeutros = {};
+    const tabela = document.getElementById("tabela-matriz-form");
+    for (const linha of STATUSES) {
+      for (const coluna of STATUSES) {
+        const chave = Config.chaveMatriz(linha, coluna);
+        const input = tabela.querySelector(`input[data-chave-matriz="${chave}"]`);
+        matriz[chave] = parseInt(input?.value || "0", 10) || 0;
+        const checkbox = tabela.querySelector(`input[data-neutro-matriz="${chave}"]`);
+        if (checkbox?.checked) matrizNeutros[chave] = true;
+      }
+    }
+    const totalLinhas = {};
+    const totalColunas = {};
+    for (const l of STATUSES) totalLinhas[l] = STATUSES.reduce((a, c) => a + matriz[Config.chaveMatriz(l, c)], 0);
+    for (const c of STATUSES) totalColunas[c] = STATUSES.reduce((a, l) => a + matriz[Config.chaveMatriz(l, c)], 0);
+
+    return {
+      data: document.getElementById("campo-data").value,
+      hora: document.getElementById("campo-hora").value,
+      fornecedora: document.getElementById("campo-fornecedora").value.trim().toUpperCase(),
+      grupo: document.getElementById("campo-grupo").value.trim(),
+      totalBase: parseInt(document.getElementById("campo-total-base").value || "0", 10),
+      concordancia: parseInt(document.getElementById("campo-concordancia").value || "0", 10),
+      divergencia: parseInt(document.getElementById("campo-divergencia").value || "0", 10),
+      neutros: parseInt(document.getElementById("campo-neutros").value || "0", 10),
+      maiorDivergencia: document.getElementById("campo-maior-divergencia").value.trim(),
+      quantidadeMaiorDivergencia: parseInt(document.getElementById("campo-qtd-maior-divergencia").value || "0", 10),
+      matriz,
+      matrizNeutros,
+      totalLinhas,
+      totalColunas,
+    };
+  }
+
+  function renderHistoricoTabela(historico, filtro) {
+    const corpo = document.getElementById("corpo-tabela-historico");
+    if (!corpo) return;
+
+    let lista = [...historico].reverse(); // mais recente primeiro
+    if (filtro?.busca) {
+      const termo = filtro.busca.toLowerCase();
+      lista = lista.filter((s) => s.fornecedora?.toLowerCase().includes(termo));
+    }
+    if (filtro?.fornecedora) {
+      lista = lista.filter((s) => s.fornecedora === filtro.fornecedora);
+    }
+
+    if (lista.length === 0) {
+      corpo.innerHTML = `<tr><td colspan="10" style="text-align:center; color:var(--text-muted); padding:30px;">
+        Nenhum snapshot encontrado.</td></tr>`;
+      return;
+    }
+
+    corpo.innerHTML = lista
+      .map((s) => {
+        const statusPill =
+          s.status === "OK" ? '<span class="pill pill-ok">OK</span>' :
+          s.status === "Revisar" ? '<span class="pill pill-revisar">Revisar</span>' :
+          '<span class="pill pill-manual">Manual</span>';
+        return `
+        <tr data-id="${s.id}">
+          <td>${fmtDataBR(s.data)}</td>
+          <td>${s.hora || "—"}</td>
+          <td>${s.fornecedora}</td>
+          <td>${fmtNum(s.totalBase)}</td>
+          <td>${fmtNum(s.concordancia)}</td>
+          <td>${fmtNum(s.divergencia)}</td>
+          <td>${s.maiorDivergencia || "—"}</td>
+          <td>${fmtNum(s.quantidadeMaiorDivergencia)}</td>
+          <td>${statusPill}</td>
+          <td class="acoes-linha">
+            <button data-acao="ver" data-id="${s.id}" title="Visualizar">👁️</button>
+            <button data-acao="editar" data-id="${s.id}" title="Editar">✏️</button>
+            <button data-acao="excluir" data-id="${s.id}" title="Excluir">🗑️</button>
+          </td>
+        </tr>`;
+      })
+      .join("");
+  }
+
+  function preencherFiltroFornecedoras(historico, selectId, incluirTodas = true) {
+    const select = document.getElementById(selectId);
+    if (!select) return;
+    const valorAtual = select.value;
+    const fornecedoras = Array.from(new Set(historico.map((s) => s.fornecedora))).sort();
+    select.innerHTML =
+      (incluirTodas ? '<option value="">Todas as fornecedoras</option>' : "") +
+      fornecedoras.map((f) => `<option value="${f}">${f}</option>`).join("");
+    if (fornecedoras.includes(valorAtual)) select.value = valorAtual;
+  }
+
+  function preencherDatalistFornecedoras(historico) {
+    const datalist = document.getElementById("lista-fornecedoras");
+    if (!datalist) return;
+    const fornecedoras = new Set([...Config.FORNECEDORAS_PADRAO, ...historico.map((s) => s.fornecedora)]);
+    datalist.innerHTML = Array.from(fornecedoras).map((f) => `<option value="${f}"></option>`).join("");
+  }
+
+  // ---------------------------------------------------------------------
+  // 6. EVOLUÇÃO — gráficos Chart.js
+  // ---------------------------------------------------------------------
+
+  function destruirGrafico(id) {
+    if (graficos[id]) {
+      graficos[id].destroy();
+      delete graficos[id];
+    }
+  }
+
+  function opcoesBaseGrafico() {
+    const corTexto = getCSSVar("--text-secondary") || "#94A3B8";
+    const corGrade = "rgba(148,163,184,0.12)";
+    return {
+      responsive: true,
+      maintainAspectRatio: false,
+      interaction: { mode: "index", intersect: false },
+      plugins: {
+        legend: { labels: { color: corTexto, font: { size: 12 } } },
+        tooltip: {
+          backgroundColor: getCSSVar("--bg-card") || "#0B1B31",
+          titleColor: getCSSVar("--text-primary") || "#fff",
+          bodyColor: getCSSVar("--text-secondary") || "#ccc",
+          borderColor: "rgba(255,255,255,0.1)",
+          borderWidth: 1,
+          padding: 10,
+        },
+      },
+      scales: {
+        x: { ticks: { color: corTexto, font: { size: 11 } }, grid: { color: corGrade } },
+        y: { ticks: { color: corTexto, font: { size: 11 } }, grid: { color: corGrade } },
+      },
+    };
+  }
+
+  function renderGraficoConcordanciaDivergencia(historico, dias) {
+    const canvas = document.getElementById("grafico-concordancia-divergencia");
+    if (!canvas || typeof Chart === "undefined") return;
+    const serie = Comparison.calcularEvolucao(historico, dias);
+
+    destruirGrafico("concordanciaDivergencia");
+    graficos.concordanciaDivergencia = new Chart(canvas, {
+      type: "line",
+      data: {
+        labels: serie.map((p) => fmtDataBR(p.data)),
+        datasets: [
+          {
+            label: "Concordância (%)",
+            data: serie.map((p) => +(p.concordanciaPct * 100).toFixed(2)),
+            borderColor: Config.CORES.verdeClaro,
+            backgroundColor: "rgba(74,222,128,0.12)",
+            tension: 0.3, fill: true, pointRadius: 3,
+          },
+          {
+            label: "Divergência (%)",
+            data: serie.map((p) => +(p.divergenciaPct * 100).toFixed(2)),
+            borderColor: Config.CORES.vermelho,
+            backgroundColor: "rgba(248,113,113,0.10)",
+            tension: 0.3, fill: true, pointRadius: 3,
+          },
+        ],
+      },
+      options: Object.assign({}, opcoesBaseGrafico(), {
+        plugins: Object.assign({}, opcoesBaseGrafico().plugins, {
+          tooltip: Object.assign({}, opcoesBaseGrafico().plugins.tooltip, {
+            callbacks: {
+              afterBody: (items) => {
+                const idx = items[0].dataIndex;
+                if (idx === 0) return "";
+                const atual = serie[idx];
+                const anterior = serie[idx - 1];
+                const deltaConc = (atual.concordanciaPct - anterior.concordanciaPct) * 100;
+                return `Variação vs. dia anterior: ${deltaConc >= 0 ? "+" : ""}${deltaConc.toFixed(2)} p.p.`;
+              },
+            },
+          }),
+        }),
+      }),
+    });
+  }
+
+  function renderGraficoTotalBase(historico, dias) {
+    const canvas = document.getElementById("grafico-total-base");
+    if (!canvas || typeof Chart === "undefined") return;
+    const serie = Comparison.calcularEvolucao(historico, dias);
+
+    destruirGrafico("totalBase");
+    graficos.totalBase = new Chart(canvas, {
+      type: "line",
+      data: {
+        labels: serie.map((p) => fmtDataBR(p.data)),
+        datasets: [{
+          label: "Total da base",
+          data: serie.map((p) => p.totalBase),
+          borderColor: Config.CORES.azulDestaque,
+          backgroundColor: "rgba(56,189,248,0.10)",
+          tension: 0.3, fill: true, pointRadius: 3,
+        }],
+      },
+      options: opcoesBaseGrafico(),
+    });
+  }
+
+  function renderGraficoStatus(historico, dias) {
+    const canvas = document.getElementById("grafico-status");
+    if (!canvas || typeof Chart === "undefined") return;
+    const serie = Comparison.calcularEvolucao(historico, dias);
+    const coresPorStatus = {
+      "Inexistente": "#94A3B8",
+      "Em ativação/validação": "#FBBF24",
+      "Ativo": "#4ADE80",
+      "Cancelado": "#F87171",
+      "Devolvido/Realocado": "#38BDF8",
+    };
+
+    destruirGrafico("status");
+    graficos.status = new Chart(canvas, {
+      type: "line",
+      data: {
+        labels: serie.map((p) => fmtDataBR(p.data)),
+        datasets: STATUSES.map((st) => ({
+          label: st,
+          data: serie.map((p) => p.porStatus[st] || 0),
+          borderColor: coresPorStatus[st],
+          backgroundColor: "transparent",
+          tension: 0.3, pointRadius: 2, borderWidth: 2,
+        })),
+      },
+      options: opcoesBaseGrafico(),
+    });
+  }
+
+  // ---------------------------------------------------------------------
+  // 7. FORNECEDORAS — ranking
+  // ---------------------------------------------------------------------
+
+  function renderFornecedorasTabela(historico) {
+    const corpo = document.getElementById("corpo-tabela-fornecedoras");
+    if (!corpo) return;
+    const ranking = Comparison.calcularRanking(historico);
+
+    if (ranking.length === 0) {
+      corpo.innerHTML = `<tr><td colspan="7" style="text-align:center; color:var(--text-muted); padding:30px;">
+        Nenhuma fornecedora com snapshots registrados.</td></tr>`;
+      return;
+    }
+
+    corpo.innerHTML = ranking
+      .map((r) => {
+        const statusPill =
+          r.status === "MELHOROU" ? `<span class="pill pill-ok">🟢 MELHOROU</span>` :
+          r.status === "PIOROU" ? `<span class="pill" style="background:var(--vermelho-bg-suave); color:var(--vermelho);">🔴 PIOROU</span>` :
+          r.status === "ESTÁVEL" ? `<span class="pill pill-manual">⚪ ESTÁVEL</span>` :
+          `<span class="pill pill-manual">SEM COMPARATIVO</span>`;
+        return `
+        <tr data-fornecedora="${r.fornecedora}" style="cursor:pointer;">
+          <td><span class="medalha">${r.medalha}</span>#${r.posicao}</td>
+          <td><strong>${r.fornecedora}</strong></td>
+          <td>${fmtPct(r.concordanciaAtual)}</td>
+          <td class="${r.deltaPP !== null ? corTendencia(r.deltaPP) : ""}">${r.deltaPP !== null ? fmtPP(r.deltaPP) : "—"}</td>
+          <td>${fmtPct(r.divergenciaAtual)}</td>
+          <td class="${r.deltaDivergenciaPP !== null ? corTendencia(-r.deltaDivergenciaPP) : ""}">${r.deltaDivergenciaPP !== null ? fmtPP(r.deltaDivergenciaPP) : "—"}</td>
+          <td>${statusPill}</td>
+        </tr>`;
+      })
+      .join("");
+  }
+
+  function renderDetalheFornecedora(historico, fornecedora) {
+    const card = document.getElementById("card-detalhe-fornecedora");
+    const canvas = document.getElementById("grafico-detalhe-fornecedora");
+    const titulo = document.getElementById("titulo-detalhe-fornecedora");
+    if (!card || !canvas) return;
+
+    const snaps = historico.filter((s) => s.fornecedora === fornecedora).sort((a, b) => (a.data < b.data ? -1 : 1));
+    if (snaps.length === 0) {
+      card.hidden = true;
+      return;
+    }
+    card.hidden = false;
+    titulo.textContent = `📈 Evolução histórica — ${fornecedora}`;
+
+    destruirGrafico("detalheFornecedora");
+    graficos.detalheFornecedora = new Chart(canvas, {
+      type: "line",
+      data: {
+        labels: snaps.map((s) => fmtDataBR(s.data)),
+        datasets: [
+          {
+            label: "Concordância (%)",
+            data: snaps.map((s) => +((s.concordancia / (s.totalBase || 1)) * 100).toFixed(2)),
+            borderColor: Config.CORES.verdeClaro,
+            backgroundColor: "rgba(74,222,128,0.12)",
+            tension: 0.3, fill: true, pointRadius: 3,
+          },
+          {
+            label: "Divergência (%)",
+            data: snaps.map((s) => +((s.divergencia / (s.totalBase || 1)) * 100).toFixed(2)),
+            borderColor: Config.CORES.vermelho,
+            backgroundColor: "rgba(248,113,113,0.10)",
+            tension: 0.3, fill: true, pointRadius: 3,
+          },
+        ],
+      },
+      options: opcoesBaseGrafico(),
+    });
+
+    card.scrollIntoView({ behavior: "smooth", block: "nearest" });
+  }
+
+  // ---------------------------------------------------------------------
+  // 8. MOVIMENTAÇÕES
+  // ---------------------------------------------------------------------
+
+  function renderMovimentacoes(historico) {
+    const { hoje, ontem, dataHoje, dataOntem } = Comparison.obterHojeOntemGlobal(historico);
+    const elPeriodo = document.getElementById("periodo-movimentacoes");
+    const elMelhorias = document.getElementById("lista-melhorias");
+    const elPioras = document.getElementById("lista-pioras");
+    const elNeutro = document.getElementById("lista-sem-alteracao");
+
+    if (!hoje || !ontem) {
+      const msg = '<p class="alerta-vazio">É necessário ter pelo menos dois snapshots para comparar.</p>';
+      if (elMelhorias) elMelhorias.innerHTML = msg;
+      if (elPioras) elPioras.innerHTML = "";
+      if (elNeutro) elNeutro.innerHTML = "";
+      if (elPeriodo) elPeriodo.textContent = "Snapshot anterior × snapshot atual";
+      return;
+    }
+
+    if (elPeriodo) elPeriodo.textContent = `Snapshot de ${fmtDataBR(dataOntem)} × snapshot de ${fmtDataBR(dataHoje)}`;
+
+    const cmp = Comparison.compararSnapshots(hoje, ontem);
+
+    function itemHTML(d, tipo) {
+      const setaTipo = d.variacao > 0 ? "↑" : d.variacao < 0 ? "↓" : "→";
+      return `
+        <div class="item-movimentacao tipo-${tipo}">
+          <div class="combo-nome">${d.linha} → ${d.coluna}</div>
+          <div class="combo-valores">${fmtNum(d.valorAnterior)} <span class="combo-seta">→</span> ${fmtNum(d.valorAtual)}</div>
+          <div class="combo-variacao">${setaTipo} ${fmtNum(Math.abs(d.variacao))} clientes</div>
+        </div>`;
+    }
+
+    const melhorias = cmp.melhorias.sort((a, b) => Math.abs(b.variacao) - Math.abs(a.variacao));
+    const pioras = cmp.pioras.sort((a, b) => Math.abs(b.variacao) - Math.abs(a.variacao));
+
+    elMelhorias.innerHTML = melhorias.length
+      ? melhorias.map((d) => itemHTML(d, "melhoria")).join("")
+      : '<p class="alerta-vazio">Nenhuma melhoria identificada neste período.</p>';
+    elPioras.innerHTML = pioras.length
+      ? pioras.map((d) => itemHTML(d, "piora")).join("")
+      : '<p class="alerta-vazio">Nenhuma piora identificada neste período.</p>';
+
+    const semAlteracaoHTML = cmp.semAlteracao.length
+      ? cmp.semAlteracao.map((d) => `<div class="item-movimentacao">
+          <div class="combo-nome">${d.linha} → ${d.coluna}</div>
+          <div class="combo-valores">${fmtNum(d.valorAtual)}</div>
+        </div>`).join("")
+      : "";
+    const neutrosHTML = cmp.neutros.length
+      ? cmp.neutros.map((d) => `<div class="item-movimentacao">
+          <div class="combo-nome">${d.linha} → ${d.coluna} <span style="color:var(--cinza-neutro); font-weight:400;">· neutro, não necessita atenção</span></div>
+          <div class="combo-valores">${fmtNum(d.valorAnterior)} <span class="combo-seta">→</span> ${fmtNum(d.valorAtual)}</div>
+        </div>`).join("")
+      : "";
+    elNeutro.innerHTML = semAlteracaoHTML + neutrosHTML ||
+      '<p class="alerta-vazio">Todas as combinações tiveram alguma variação.</p>';
+  }
+
+  // ---------------------------------------------------------------------
+  // 10. ALERTAS
+  // ---------------------------------------------------------------------
+
+  function renderAlertas(historico) {
+    const container = document.getElementById("lista-alertas");
+    const badge = document.getElementById("badge-alertas");
+    if (!container) return;
+
+    const alertas = Comparison.gerarAlertas(historico);
+
+    if (badge) {
+      const criticos = alertas.filter((a) => a.tipo === "piora" || a.tipo === "atencao").length;
+      badge.hidden = criticos === 0;
+      badge.textContent = criticos;
+    }
+
+    if (alertas.length === 0) {
+      container.innerHTML = '<p class="alerta-vazio">Nenhum alerta no momento. Envie mais snapshots para começar a receber análises automáticas.</p>';
+      return;
+    }
+
+    container.innerHTML = alertas
+      .map(
+        (a) => `
+      <div class="alerta tipo-${a.tipo}">
+        <span class="alerta-icone">${a.icone}</span>
+        <div>
+          <div class="alerta-titulo">${a.titulo}</div>
+          <div class="alerta-mensagem">${a.mensagem}</div>
+        </div>
+      </div>`
+      )
+      .join("");
+  }
+
+  // ---------------------------------------------------------------------
+  // 9. MATRIZ visual (atual + delta, com destaque de cor)
+  // ---------------------------------------------------------------------
+
+  function renderMatrizVisual(historico, fornecedoraSelecionada) {
+    const tabela = document.getElementById("tabela-matriz-visual");
+    if (!tabela) return;
+
+    let atual, anterior;
+    if (fornecedoraSelecionada === "__global__" || !fornecedoraSelecionada) {
+      const r = Comparison.obterHojeOntemGlobal(historico);
+      atual = r.hoje;
+      anterior = r.ontem;
+    } else {
+      const snaps = historico.filter((s) => s.fornecedora === fornecedoraSelecionada).sort((a, b) => (a.data < b.data ? -1 : 1));
+      atual = snaps[snaps.length - 1];
+      anterior = snaps.length > 1 ? snaps[snaps.length - 2] : null;
+    }
+
+    if (!atual) {
+      tabela.innerHTML = "";
+      return;
+    }
+
+    const cmp = anterior ? Comparison.compararSnapshots(atual, anterior) : null;
+    const detalhesPorChave = new Map();
+    if (cmp) for (const d of cmp.detalhes) detalhesPorChave.set(d.chave, d);
+
+    let html = "<thead><tr><th>Fornec. ↓ / BO →</th>";
+    for (const col of STATUSES) html += `<th>${col}</th>`;
+    html += "</tr></thead><tbody>";
+
+    for (const linha of STATUSES) {
+      html += `<tr><td class="rotulo-linha">${linha}</td>`;
+      for (const coluna of STATUSES) {
+        const chave = Config.chaveMatriz(linha, coluna);
+        const valorAtual = (atual.matriz && atual.matriz[chave]) || 0;
+        const det = detalhesPorChave.get(chave);
+        const ehDiagonal = linha === coluna;
+        let classeVariacao = "";
+        let textoDelta = "sem comparativo";
+        if (det) {
+          if (det.tipo === "MELHOROU") classeVariacao = "melhoria";
+          else if (det.tipo === "PIOROU") classeVariacao = "piora";
+          else if (det.tipo === "NEUTRO") classeVariacao = "neutro-categoria";
+          else classeVariacao = "neutro";
+          const seta = det.variacao > 0 ? "↑" : det.variacao < 0 ? "↓" : "•";
+          textoDelta = det.tipo === "NEUTRO" ? "não necessita atenção" : `${seta} ${fmtNum(Math.abs(det.variacao))}`;
+        }
+        html += `<td class="celula-matriz ${classeVariacao} ${ehDiagonal ? "diagonal" : ""}">
+          <div class="valor-atual">${fmtNum(valorAtual)}</div>
+          <div class="valor-delta">${textoDelta}</div>
+        </td>`;
+      }
+      html += "</tr>";
+    }
+    html += "</tbody>";
+    tabela.innerHTML = html;
+  }
+
+  // ---------------------------------------------------------------------
+  // Toasts
+  // ---------------------------------------------------------------------
+
+  function mostrarToast(mensagem, tipo = "info") {
+    const container = document.getElementById("toast-container");
+    if (!container) return;
+    const toast = document.createElement("div");
+    toast.className = `toast ${tipo}`;
+    toast.textContent = mensagem;
+    container.appendChild(toast);
+    setTimeout(() => toast.remove(), 4200);
+  }
+
+  // ---------------------------------------------------------------------
+  // Exports públicos
+  // ---------------------------------------------------------------------
+
+  global.INDEXApp = global.INDEXApp || {};
+  global.INDEXApp.Dashboard = {
+    renderKPIsInicio,
+    renderIndiceEvolucao,
+    montarTabelaMatrizFormulario,
+    atualizarTotaisFormularioMatriz,
+    preencherFormularioComDraft,
+    lerFormularioSnapshot,
+    renderHistoricoTabela,
+    preencherFiltroFornecedoras,
+    preencherDatalistFornecedoras,
+    renderGraficoConcordanciaDivergencia,
+    renderGraficoTotalBase,
+    renderGraficoStatus,
+    renderFornecedorasTabela,
+    renderDetalheFornecedora,
+    renderMovimentacoes,
+    renderAlertas,
+    renderMatrizVisual,
+    mostrarToast,
+    fmtNum, fmtPct, fmtPP, fmtDataBR,
+  };
+})(window);
+
+
+/* ===== app.js ===== */
+/**
+ * app.js
+ * ---------------------------------------------------------------------------
+ * Ponto de entrada do INDEX. Inicializa o app, mantém o estado em memória
+ * (a lista de snapshots recarregada do storage após qualquer alteração),
+ * cuida da navegação entre seções e liga todos os eventos de UI. As
+ * funções de cálculo vivem em comparison.js, o desenho de tela em
+ * dashboard.js, a leitura de imagem em ocr.js e a persistência em
+ * storage.js — este arquivo só orquestra.
+ * ---------------------------------------------------------------------------
+ */
+(function () {
+  "use strict";
+
+  const { Storage, Comparison, Dashboard, OCR, Config } = window.INDEXApp;
+
+  const estado = {
+    snapshots: [],
+    secaoAtual: "inicio",
+    diasEvolucao: "todos",
+    draftAtual: null, // rascunho do OCR em conferência (antes de salvar)
+    idEmEdicao: null, // se estiver editando um snapshot já salvo
+  };
+
+  // ---------------------------------------------------------------------
+  // Inicialização
+  // ---------------------------------------------------------------------
+
+  async function iniciar() {
+    Dashboard.montarTabelaMatrizFormulario();
+    await recarregarTudo();
+    ligarNavegacao();
+    ligarTema();
+    ligarUpload();
+    ligarFormConferencia();
+    ligarHistorico();
+    ligarFornecedoras();
+    ligarFiltrosEvolucao();
+    ligarMatrizSelect();
+    ligarExportacoes();
+    ligarConfiguracoes();
+    ligarModal();
+
+    const motor = document.getElementById("motor-armazenamento");
+    if (motor) motor.textContent = Storage.qualMotorEstaAtivo();
+  }
+
+  /** Recarrega os snapshots do armazenamento e redesenha a seção visível. */
+  async function recarregarTudo() {
+    estado.snapshots = await Storage.carregarSnapshots();
+    atualizarCabecalho();
+    Dashboard.preencherDatalistFornecedoras(estado.snapshots);
+    Dashboard.preencherFiltroFornecedoras(estado.snapshots, "filtro-fornecedora-historico");
+    renderizarSecaoAtual();
+  }
+
+  function atualizarCabecalho() {
+    const el = document.getElementById("ultima-atualizacao");
+    if (!el) return;
+    if (estado.snapshots.length === 0) {
+      el.textContent = "nenhum snapshot ainda";
+      return;
+    }
+    const ultimo = estado.snapshots[estado.snapshots.length - 1];
+    el.textContent = `${Dashboard.fmtDataBR(ultimo.data)} às ${ultimo.hora || "—"}`;
+  }
+
+  // ---------------------------------------------------------------------
+  // Navegação lateral
+  // ---------------------------------------------------------------------
+
+  function ligarNavegacao() {
+    document.querySelectorAll(".nav-item").forEach((btn) => {
+      btn.addEventListener("click", () => navegarPara(btn.dataset.secao));
+    });
+    document.getElementById("btn-novo-snapshot")?.addEventListener("click", () => navegarPara("snapshots"));
+  }
+
+  function navegarPara(secao) {
+    estado.secaoAtual = secao;
+    document.querySelectorAll(".nav-item").forEach((b) => b.classList.toggle("is-active", b.dataset.secao === secao));
+    document.querySelectorAll(".secao").forEach((s) => s.classList.toggle("is-active", s.id === `secao-${secao}`));
+    renderizarSecaoAtual();
+  }
+
+  function renderizarSecaoAtual() {
+    switch (estado.secaoAtual) {
+      case "inicio":
+        Dashboard.renderKPIsInicio(estado.snapshots);
+        Dashboard.renderIndiceEvolucao(estado.snapshots);
+        break;
+      case "snapshots":
+        Dashboard.renderHistoricoTabela(estado.snapshots, lerFiltrosHistorico());
+        break;
+      case "evolucao":
+        Dashboard.renderGraficoConcordanciaDivergencia(estado.snapshots, estado.diasEvolucao);
+        Dashboard.renderGraficoTotalBase(estado.snapshots, estado.diasEvolucao);
+        Dashboard.renderGraficoStatus(estado.snapshots, estado.diasEvolucao);
+        break;
+      case "fornecedoras":
+        Dashboard.renderFornecedorasTabela(estado.snapshots);
+        break;
+      case "movimentacoes":
+        Dashboard.renderMovimentacoes(estado.snapshots);
+        break;
+      case "alertas":
+        Dashboard.renderAlertas(estado.snapshots);
+        break;
+      case "matriz": {
+        const select = document.getElementById("select-fornecedora-matriz");
+        atualizarOpcoesFornecedorasMatriz();
+        Dashboard.renderMatrizVisual(estado.snapshots, select?.value);
+        break;
+      }
+      default:
+        break;
+    }
+    // O badge de alertas no menu lateral fica sempre atualizado, mesmo fora da seção ALERTAS
+    if (estado.secaoAtual !== "alertas") atualizarBadgeAlertas();
+  }
+
+  /** Atualiza só o contador do menu lateral, sem redesenhar a lista completa de alertas. */
+  function atualizarBadgeAlertas() {
+    const badge = document.getElementById("badge-alertas");
+    if (!badge) return;
+    const alertas = Comparison.gerarAlertas(estado.snapshots);
+    const criticos = alertas.filter((a) => a.tipo === "piora" || a.tipo === "atencao").length;
+    badge.hidden = criticos === 0;
+    badge.textContent = criticos;
+  }
+
+  function atualizarOpcoesFornecedorasMatriz() {
+    const select = document.getElementById("select-fornecedora-matriz");
+    if (!select) return;
+    const valorAtual = select.value;
+    const fornecedoras = Array.from(new Set(estado.snapshots.map((s) => s.fornecedora))).sort();
+    select.innerHTML =
+      '<option value="__global__">Todas (agregado)</option>' +
+      fornecedoras.map((f) => `<option value="${f}">${f}</option>`).join("");
+    if ([...select.options].some((o) => o.value === valorAtual)) select.value = valorAtual;
+  }
+
+  // ---------------------------------------------------------------------
+  // Tema claro/escuro
+  // ---------------------------------------------------------------------
+
+  function ligarTema() {
+    const salvo = localStorage.getItem("index_tema") || "dark";
+    document.documentElement.setAttribute("data-theme", salvo);
+    atualizarIconeTema(salvo);
+
+    document.getElementById("btn-tema")?.addEventListener("click", () => {
+      const atual = document.documentElement.getAttribute("data-theme");
+      const novo = atual === "dark" ? "light" : "dark";
+      document.documentElement.setAttribute("data-theme", novo);
+      localStorage.setItem("index_tema", novo);
+      atualizarIconeTema(novo);
+      renderizarSecaoAtual(); // reconstrói gráficos com as novas cores de eixo/texto
+    });
+  }
+
+  function atualizarIconeTema(tema) {
+    const icone = document.getElementById("icone-tema");
+    if (icone) icone.textContent = tema === "dark" ? "🌙" : "☀️";
+  }
+
+  // ---------------------------------------------------------------------
+  // Upload + OCR
+  // ---------------------------------------------------------------------
+
+  function ligarUpload() {
+    const dropzone = document.getElementById("dropzone");
+    const input = document.getElementById("input-arquivo");
+    const btnSelecionar = document.getElementById("btn-selecionar-imagem");
+
+    btnSelecionar?.addEventListener("click", (e) => {
+      e.stopPropagation();
+      input.click();
+    });
+    dropzone?.addEventListener("click", () => input.click());
+
+    input?.addEventListener("change", () => {
+      if (input.files && input.files[0]) processarUpload(input.files[0]);
+    });
+
+    ["dragenter", "dragover"].forEach((evt) =>
+      dropzone?.addEventListener(evt, (e) => {
+        e.preventDefault();
+        dropzone.classList.add("is-dragover");
+      })
+    );
+    ["dragleave", "drop"].forEach((evt) =>
+      dropzone?.addEventListener(evt, (e) => {
+        e.preventDefault();
+        dropzone.classList.remove("is-dragover");
+      })
+    );
+    dropzone?.addEventListener("drop", (e) => {
+      const arquivo = e.dataTransfer.files && e.dataTransfer.files[0];
+      if (arquivo) processarUpload(arquivo);
+    });
+
+    document.getElementById("btn-cancelar-snapshot")?.addEventListener("click", cancelarConferencia);
+    document.getElementById("btn-copiar-diagnostico")?.addEventListener("click", async () => {
+      const texto = document.getElementById("conteudo-diagnostico-ocr")?.textContent || "";
+      try {
+        await navigator.clipboard.writeText(texto);
+        Dashboard.mostrarToast("Diagnóstico copiado.", "sucesso");
+      } catch (e) {
+        Dashboard.mostrarToast("Não foi possível copiar automaticamente — selecione o texto manualmente.", "erro");
+      }
+    });
+  }
+
+  /** Monta o texto do painel de diagnóstico (linhas reconhecidas pelo OCR + texto bruto). */
+  function exibirDiagnosticoOCR(resultado) {
+    const painel = document.getElementById("painel-diagnostico-ocr");
+    const conteudo = document.getElementById("conteudo-diagnostico-ocr");
+    if (!painel || !conteudo) return;
+
+    const linhas = (resultado.linhasDebug || [])
+      .map((l) => `[y=${l.y}, x=${l.x0}-${l.x1}]  ${l.texto}`)
+      .join("\n");
+
+    conteudo.textContent =
+      `--- SEGUNDA PASSADA (foco na matriz) ---\n${resultado.usouSegundaPassada ? "Rodou e substituiu os valores da matriz." : "Não rodou ou não trouxe melhora suficiente — mantido resultado da 1ª passada."}\n\n` +
+      `--- LINHAS RECONSTRUÍDAS (ordenadas por altura na imagem) ---\n${linhas}\n\n` +
+      `--- TEXTO BRUTO DO TESSERACT (1ª passada) ---\n${resultado.textoCompletoOCR || "(vazio)"}`;
+    painel.hidden = false;
+  }
+
+  async function processarUpload(arquivo) {
+    const tiposAceitos = ["image/png", "image/jpeg", "image/webp"];
+    if (!tiposAceitos.includes(arquivo.type)) {
+      Dashboard.mostrarToast("Formato não suportado. Envie PNG, JPG, JPEG ou WebP.", "erro");
+      return;
+    }
+
+    estado.idEmEdicao = null;
+    document.getElementById("card-processamento").hidden = false;
+    document.getElementById("card-processamento").scrollIntoView({ behavior: "smooth", block: "start" });
+
+    const previewImg = document.getElementById("preview-imagem");
+    previewImg.src = URL.createObjectURL(arquivo);
+
+    const form = document.getElementById("form-conferencia");
+    const progresso = document.getElementById("progresso-ocr");
+    const barra = document.getElementById("progresso-fill");
+    const texto = document.getElementById("progresso-texto");
+    const avisoConfianca = document.getElementById("aviso-baixa-confianca");
+    const badgeConfianca = document.getElementById("badge-confianca");
+
+    form.hidden = true;
+    progresso.hidden = false;
+    avisoConfianca.hidden = true;
+    document.getElementById("painel-diagnostico-ocr").hidden = true;
+    badgeConfianca.textContent = "";
+    barra.style.width = "0%";
+    texto.textContent = "Lendo imagem…";
+
+    try {
+      const resultado = await OCR.lerPrintDoBI(arquivo, (pct) => {
+        barra.style.width = pct + "%";
+        texto.textContent = `Lendo imagem… ${pct}%`;
+      });
+
+      estado.draftAtual = resultado;
+      Dashboard.preencherFormularioComDraft(resultado.draft);
+
+      badgeConfianca.textContent = `Confiança: ${resultado.confianca}%`;
+      badgeConfianca.className =
+        "badge-confianca " + (resultado.confianca >= 80 ? "alta" : resultado.confianca >= 50 ? "media" : "baixa");
+      avisoConfianca.hidden = !resultado.avisoBaixaConfianca;
+
+      exibirDiagnosticoOCR(resultado);
+
+      progresso.hidden = true;
+      form.hidden = false;
+    } catch (erro) {
+      console.error(erro);
+      texto.textContent = "";
+      progresso.hidden = true;
+      Dashboard.mostrarToast(
+        erro.message || "Não foi possível ler a imagem automaticamente. Preencha os dados manualmente.",
+        "erro"
+      );
+      // Mesmo com falha no OCR, libera o formulário zerado para digitação manual —
+      // o upload nunca deve travar o usuário.
+      estado.draftAtual = { draft: draftVazio(), confianca: 0, avisoBaixaConfianca: true };
+      Dashboard.preencherFormularioComDraft(estado.draftAtual.draft);
+      avisoConfianca.hidden = false;
+      document.getElementById("painel-diagnostico-ocr").hidden = true;
+      badgeConfianca.textContent = "Leitura automática indisponível";
+      badgeConfianca.className = "badge-confianca baixa";
+      form.hidden = false;
+    }
+  }
+
+  function draftVazio() {
+    const matriz = {};
+    for (const l of Config.STATUSES) for (const c of Config.STATUSES) matriz[Config.chaveMatriz(l, c)] = 0;
+    return {
+      fornecedora: "", grupo: "", data: new Date().toISOString().slice(0, 10), hora: new Date().toTimeString().slice(0, 5),
+      totalBase: 0, concordancia: 0, divergencia: 0, neutros: 0, maiorDivergencia: "", quantidadeMaiorDivergencia: 0,
+      matriz, matrizNeutros: {}, totalLinhas: {}, totalColunas: {},
+    };
+  }
+
+  function cancelarConferencia() {
+    document.getElementById("card-processamento").hidden = true;
+    document.getElementById("input-arquivo").value = "";
+    estado.draftAtual = null;
+    estado.idEmEdicao = null;
+  }
+
+  // ---------------------------------------------------------------------
+  // Confirmação do snapshot (novo ou edição)
+  // ---------------------------------------------------------------------
+
+  function ligarFormConferencia() {
+    document.getElementById("form-conferencia")?.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const dados = Dashboard.lerFormularioSnapshot();
+
+      if (!dados.fornecedora) {
+        Dashboard.mostrarToast("Informe a fornecedora antes de confirmar.", "erro");
+        return;
+      }
+
+      const confianca = estado.draftAtual?.confianca ?? null;
+      const origem = estado.draftAtual ? "ocr" : "manual";
+      const status = confianca === null ? "Manual" : confianca >= 80 ? "OK" : "Revisar";
+
+      const registro = Object.assign({}, dados, {
+        ocrConfidence: confianca,
+        origem,
+        status,
+      });
+
+      try {
+        if (estado.idEmEdicao) {
+          await Storage.atualizarSnapshot(estado.idEmEdicao, registro);
+          Dashboard.mostrarToast("Snapshot atualizado com sucesso.", "sucesso");
+        } else {
+          await Storage.salvarSnapshot(registro);
+          Dashboard.mostrarToast("Snapshot salvo no histórico.", "sucesso");
+        }
+      } catch (erro) {
+        console.error(erro);
+        Dashboard.mostrarToast("Erro ao salvar snapshot: " + erro.message, "erro");
+        return;
+      }
+
+      cancelarConferencia();
+      await recarregarTudo();
+      navegarPara("inicio");
+    });
+  }
+
+  // ---------------------------------------------------------------------
+  // Histórico (tabela): filtros, ver/editar/excluir
+  // ---------------------------------------------------------------------
+
+  function lerFiltrosHistorico() {
+    return {
+      busca: document.getElementById("busca-historico")?.value || "",
+      fornecedora: document.getElementById("filtro-fornecedora-historico")?.value || "",
+    };
+  }
+
+  function ligarHistorico() {
+    document.getElementById("busca-historico")?.addEventListener("input", () => {
+      Dashboard.renderHistoricoTabela(estado.snapshots, lerFiltrosHistorico());
+    });
+    document.getElementById("filtro-fornecedora-historico")?.addEventListener("change", () => {
+      Dashboard.renderHistoricoTabela(estado.snapshots, lerFiltrosHistorico());
+    });
+
+    let ordenacaoAtual = { campo: null, asc: true };
+    document.querySelectorAll("#tabela-historico th[data-sort]").forEach((th) => {
+      th.addEventListener("click", () => {
+        const campo = th.dataset.sort;
+        ordenacaoAtual.asc = ordenacaoAtual.campo === campo ? !ordenacaoAtual.asc : true;
+        ordenacaoAtual.campo = campo;
+        estado.snapshots.sort((a, b) => {
+          const va = a[campo] ?? "";
+          const vb = b[campo] ?? "";
+          if (va < vb) return ordenacaoAtual.asc ? -1 : 1;
+          if (va > vb) return ordenacaoAtual.asc ? 1 : -1;
+          return 0;
+        });
+        Dashboard.renderHistoricoTabela(estado.snapshots, lerFiltrosHistorico());
+      });
+    });
+
+    document.getElementById("corpo-tabela-historico")?.addEventListener("click", async (e) => {
+      const btn = e.target.closest("button[data-acao]");
+      if (!btn) return;
+      const id = btn.dataset.id;
+      const snap = estado.snapshots.find((s) => s.id === id);
+      if (!snap) return;
+
+      if (btn.dataset.acao === "ver") abrirModalVisualizacao(snap);
+      else if (btn.dataset.acao === "editar") abrirEdicaoSnapshot(snap);
+      else if (btn.dataset.acao === "excluir") {
+        if (confirm(`Excluir o snapshot de ${snap.fornecedora} (${Dashboard.fmtDataBR(snap.data)})? Esta ação não pode ser desfeita.`)) {
+          await Storage.excluirSnapshot(id);
+          Dashboard.mostrarToast("Snapshot excluído.", "info");
+          await recarregarTudo();
+        }
+      }
+    });
+  }
+
+  function abrirEdicaoSnapshot(snap) {
+    estado.idEmEdicao = snap.id;
+    estado.draftAtual = null; // edição manual: sem score de confiança do OCR
+    navegarPara("snapshots");
+    document.getElementById("card-processamento").hidden = false;
+    document.getElementById("progresso-ocr").hidden = true;
+    document.getElementById("aviso-baixa-confianca").hidden = true;
+    document.getElementById("badge-confianca").textContent = "Edição manual";
+    document.getElementById("badge-confianca").className = "badge-confianca media";
+    document.getElementById("preview-imagem").src = "";
+    document.getElementById("form-conferencia").hidden = false;
+    Dashboard.preencherFormularioComDraft(snap);
+    document.getElementById("card-processamento").scrollIntoView({ behavior: "smooth" });
+  }
+
+  function abrirModalVisualizacao(snap) {
+    const overlay = document.getElementById("modal-overlay");
+    const titulo = document.getElementById("modal-titulo");
+    const corpo = document.getElementById("modal-corpo");
+    titulo.textContent = `${snap.fornecedora} — ${Dashboard.fmtDataBR(snap.data)} ${snap.hora || ""}`;
+
+    let linhasMatriz = "";
+    for (const l of Config.STATUSES) {
+      linhasMatriz += `<tr><td style="color:var(--text-secondary); font-size:12px;">${l}</td>`;
+      for (const c of Config.STATUSES) {
+        const v = snap.matriz?.[Config.chaveMatriz(l, c)] || 0;
+        linhasMatriz += `<td style="text-align:center; padding:4px; ${l === c ? "font-weight:700;" : ""}">${Dashboard.fmtNum(v)}</td>`;
+      }
+      linhasMatriz += "</tr>";
+    }
+
+    corpo.innerHTML = `
+      <p><strong>Total da base:</strong> ${Dashboard.fmtNum(snap.totalBase)}</p>
+      <p><strong>Concordância:</strong> ${Dashboard.fmtNum(snap.concordancia)} (${Dashboard.fmtPct(snap.concordancia / (snap.totalBase || 1))})</p>
+      <p><strong>Divergência:</strong> ${Dashboard.fmtNum(snap.divergencia)} (${Dashboard.fmtPct(snap.divergencia / (snap.totalBase || 1))})</p>
+      ${snap.neutros ? `<p><strong>Neutros (fora do cálculo):</strong> ${Dashboard.fmtNum(snap.neutros)} <span style="color:var(--text-muted); font-size:12px;">— não necessitam atenção</span></p>` : ""}
+      <p><strong>Maior divergência:</strong> ${snap.maiorDivergencia || "—"} (${Dashboard.fmtNum(snap.quantidadeMaiorDivergencia)})</p>
+      <p><strong>Origem:</strong> ${snap.origem === "ocr" ? `OCR (confiança ${snap.ocrConfidence ?? "—"}%)` : "Digitação manual"}</p>
+      <table style="width:100%; border-collapse:collapse; margin-top:12px;">${linhasMatriz}</table>
+    `;
+    overlay.hidden = false;
+  }
+
+  function ligarModal() {
+    document.getElementById("btn-fechar-modal")?.addEventListener("click", () => {
+      document.getElementById("modal-overlay").hidden = true;
+    });
+    document.getElementById("modal-overlay")?.addEventListener("click", (e) => {
+      if (e.target.id === "modal-overlay") document.getElementById("modal-overlay").hidden = true;
+    });
+  }
+
+  // ---------------------------------------------------------------------
+  // Fornecedoras (ranking clicável)
+  // ---------------------------------------------------------------------
+
+  function ligarFornecedoras() {
+    document.getElementById("corpo-tabela-fornecedoras")?.addEventListener("click", (e) => {
+      const linha = e.target.closest("tr[data-fornecedora]");
+      if (!linha) return;
+      Dashboard.renderDetalheFornecedora(estado.snapshots, linha.dataset.fornecedora);
+    });
+  }
+
+  // ---------------------------------------------------------------------
+  // Filtros de período (Evolução)
+  // ---------------------------------------------------------------------
+
+  function ligarFiltrosEvolucao() {
+    document.querySelectorAll("#filtros-periodo-evolucao .chip").forEach((chip) => {
+      chip.addEventListener("click", () => {
+        document.querySelectorAll("#filtros-periodo-evolucao .chip").forEach((c) => c.classList.remove("is-active"));
+        chip.classList.add("is-active");
+        const dias = chip.dataset.dias === "todos" ? "todos" : parseInt(chip.dataset.dias, 10);
+        estado.diasEvolucao = dias;
+        Dashboard.renderGraficoConcordanciaDivergencia(estado.snapshots, dias);
+        Dashboard.renderGraficoTotalBase(estado.snapshots, dias);
+        Dashboard.renderGraficoStatus(estado.snapshots, dias);
+      });
+    });
+  }
+
+  // ---------------------------------------------------------------------
+  // Matriz — seletor de fornecedora
+  // ---------------------------------------------------------------------
+
+  function ligarMatrizSelect() {
+    document.getElementById("select-fornecedora-matriz")?.addEventListener("change", (e) => {
+      Dashboard.renderMatrizVisual(estado.snapshots, e.target.value);
+    });
+  }
+
+  // ---------------------------------------------------------------------
+  // Exportações
+  // ---------------------------------------------------------------------
+
+  function baixarArquivo(nome, conteudo, tipoMime) {
+    const blob = new Blob([conteudo], { type: tipoMime });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = nome;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  }
+
+  function ligarExportacoes() {
+    document.getElementById("btn-exportar-json")?.addEventListener("click", () => {
+      baixarArquivo(
+        `index_historico_${new Date().toISOString().slice(0, 10)}.json`,
+        JSON.stringify(estado.snapshots, null, 2),
+        "application/json"
+      );
+    });
+
+    document.getElementById("btn-exportar-csv")?.addEventListener("click", () => {
+      const colunas = ["data", "hora", "fornecedora", "grupo", "totalBase", "concordancia", "divergencia", "maiorDivergencia", "quantidadeMaiorDivergencia", "status"];
+      const linhas = [colunas.join(";")];
+      for (const s of estado.snapshots) {
+        linhas.push(colunas.map((c) => `"${(s[c] ?? "").toString().replace(/"/g, '""')}"`).join(";"));
+      }
+      baixarArquivo(`index_historico_${new Date().toISOString().slice(0, 10)}.csv`, linhas.join("\n"), "text/csv;charset=utf-8");
+    });
+
+    document.getElementById("btn-exportar-relatorio")?.addEventListener("click", () => {
+      const ranking = Comparison.calcularRanking(estado.snapshots);
+      const { hoje, ontem, dataHoje, dataOntem } = Comparison.obterHojeOntemGlobal(estado.snapshots);
+      const cmp = hoje && ontem ? Comparison.compararSnapshots(hoje, ontem) : null;
+      const indice = Comparison.calcularIndiceEvolucao(estado.snapshots);
+
+      const html = `<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8">
+        <title>Relatório INDEX — ${dataHoje || ""}</title>
+        <style>
+          body{font-family:Arial,sans-serif;background:#fff;color:#111;padding:32px;max-width:900px;margin:auto;}
+          h1{color:#0B2E1F;} h2{color:#1F9D5A; border-bottom:2px solid #1F9D5A; padding-bottom:4px;}
+          table{width:100%; border-collapse:collapse; margin:12px 0;} td,th{border:1px solid #ddd; padding:6px 8px; font-size:13px;}
+          th{background:#0B2E1F; color:#fff;}
+          .kpi{display:inline-block; margin:8px 16px 8px 0;}
+        </style></head><body>
+        <h1>INDEX — Relatório de Evolução da Conciliação</h1>
+        <p>Gerado em ${new Date().toLocaleString("pt-BR")} • Snapshot de referência: ${Dashboard.fmtDataBR(dataHoje)} vs. ${Dashboard.fmtDataBR(dataOntem)}</p>
+
+        <h2>Resumo executivo</h2>
+        <div class="kpi"><strong>Total da base:</strong> ${Dashboard.fmtNum(hoje?.totalBase)}</div>
+        <div class="kpi"><strong>Concordância:</strong> ${Dashboard.fmtPct(hoje?.concordanciaPct)}</div>
+        <div class="kpi"><strong>Divergência:</strong> ${Dashboard.fmtPct(hoje?.divergenciaPct)}</div>
+        ${cmp ? `<div class="kpi"><strong>Evolução vs. ontem:</strong> ${Dashboard.fmtPP(cmp.deltaConcordanciaPP)}</div>` : ""}
+        ${indice.pontuacao !== null ? `<div class="kpi"><strong>Índice de Evolução:</strong> ${indice.pontuacao}/100 (${indice.classificacao.texto})</div>` : ""}
+
+        <h2>Ranking de fornecedoras</h2>
+        <table><tr><th>#</th><th>Fornecedora</th><th>Concordância</th><th>Δ p.p.</th><th>Status</th></tr>
+        ${ranking.map((r) => `<tr><td>${r.posicao}</td><td>${r.fornecedora}</td><td>${Dashboard.fmtPct(r.concordanciaAtual)}</td><td>${r.deltaPP !== null ? Dashboard.fmtPP(r.deltaPP) : "—"}</td><td>${r.status}</td></tr>`).join("")}
+        </table>
+
+        <h2>Histórico completo (${estado.snapshots.length} snapshots)</h2>
+        <table><tr><th>Data</th><th>Hora</th><th>Fornecedora</th><th>Total</th><th>Concordância</th><th>Divergência</th><th>Maior divergência</th></tr>
+        ${estado.snapshots.map((s) => `<tr><td>${Dashboard.fmtDataBR(s.data)}</td><td>${s.hora || ""}</td><td>${s.fornecedora}</td><td>${Dashboard.fmtNum(s.totalBase)}</td><td>${Dashboard.fmtNum(s.concordancia)}</td><td>${Dashboard.fmtNum(s.divergencia)}</td><td>${s.maiorDivergencia || ""}</td></tr>`).join("")}
+        </table>
+        </body></html>`;
+
+      baixarArquivo(`index_relatorio_${new Date().toISOString().slice(0, 10)}.html`, html, "text/html;charset=utf-8");
+    });
+  }
+
+  // ---------------------------------------------------------------------
+  // Configurações
+  // ---------------------------------------------------------------------
+
+  function ligarConfiguracoes() {
+    document.getElementById("btn-limpar-tudo")?.addEventListener("click", async () => {
+      if (confirm("Isso vai apagar TODOS os snapshots salvos neste navegador. Deseja continuar?")) {
+        if (confirm("Tem certeza mesmo? Esta ação não pode ser desfeita. Considere exportar um backup antes.")) {
+          await Storage.limparTudo();
+          Dashboard.mostrarToast("Histórico apagado.", "info");
+          await recarregarTudo();
+          navegarPara("inicio");
+        }
+      }
+    });
+  }
+
+  // ---------------------------------------------------------------------
+
+  document.addEventListener("DOMContentLoaded", iniciar);
+})();
+
+</script>
+</body>
+</html>
